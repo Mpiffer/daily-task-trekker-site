@@ -2,12 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
-import { ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-react';
 import { useChecklist } from '@/integrations/supabase';
-import { motion } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import ChecklistItem from './ChecklistItem';
 import DateNavigation from './DateNavigation';
@@ -33,6 +29,7 @@ const DailyChecklist = ({ onUpdate }) => {
   const [readyTime, setReadyTime] = useState(null);
   const [finishTime, setFinishTime] = useState(null);
   const [tasks, setTasks] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { theme, setTheme } = useTheme();
 
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
@@ -73,8 +70,9 @@ const DailyChecklist = ({ onUpdate }) => {
     setProduct(e.target.value);
   };
 
-  const handleReadyClick = () => {
-    if (readyTime) return; // Prevent multiple clicks
+  const handleReadyClick = async () => {
+    if (readyTime || isSubmitting) return; // Prevent multiple submissions
+    setIsSubmitting(true);
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
     
@@ -85,11 +83,19 @@ const DailyChecklist = ({ onUpdate }) => {
       created_at: dateKey
     };
 
-    onUpdate(checklistData);
+    try {
+      await onUpdate(checklistData);
+    } catch (error) {
+      console.error("Error updating checklist:", error);
+      setReadyTime(null); // Reset if there's an error
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleFinishClick = () => {
-    if (finishTime) return; // Prevent multiple clicks
+  const handleFinishClick = async () => {
+    if (finishTime || isSubmitting) return; // Prevent multiple submissions
+    setIsSubmitting(true);
     const newFinishTime = new Date().toLocaleTimeString();
     setFinishTime(newFinishTime);
     
@@ -101,7 +107,14 @@ const DailyChecklist = ({ onUpdate }) => {
       created_at: dateKey
     };
 
-    onUpdate(checklistData);
+    try {
+      await onUpdate(checklistData);
+    } catch (error) {
+      console.error("Error updating checklist:", error);
+      setFinishTime(null); // Reset if there's an error
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const allTasksCompleted = Object.keys(tasks).length === defaultTasks.length && 
@@ -112,12 +125,7 @@ const DailyChecklist = ({ onUpdate }) => {
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="max-w-md mx-auto p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"
-    >
+    <div className="max-w-md mx-auto p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
       <DateNavigation 
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
@@ -150,6 +158,7 @@ const DailyChecklist = ({ onUpdate }) => {
         finishTime={finishTime}
         onReadyClick={handleReadyClick}
         onFinishClick={handleFinishClick}
+        isSubmitting={isSubmitting}
       />
       
       <Button className="mt-4 w-full" onClick={() => setShowCalendar(!showCalendar)}>
@@ -172,10 +181,9 @@ const DailyChecklist = ({ onUpdate }) => {
         className="mt-4 w-full"
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       >
-        {theme === 'dark' ? <Sun className="mr-2" /> : <Moon className="mr-2" />}
         {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
       </Button>
-    </motion.div>
+    </div>
   );
 };
 

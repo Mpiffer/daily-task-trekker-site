@@ -1,15 +1,15 @@
 import React from 'react';
 import { Button } from "@/components/ui/button"
 
-const ReadyFinishButtons = ({ allTasksCompleted, readyTime, finishTime, onReadyClick, onFinishClick }) => {
+const ReadyFinishButtons = ({ allTasksCompleted, readyTime, finishTime, onReadyClick, onFinishClick, isSubmitting }) => {
   return (
     <>
       <Button 
         className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white" 
         onClick={onReadyClick}
-        disabled={!allTasksCompleted || readyTime !== null}
+        disabled={!allTasksCompleted || readyTime !== null || isSubmitting}
       >
-        Ready
+        {isSubmitting ? 'Processando...' : 'Ready'}
       </Button>
       
       {readyTime && (
@@ -21,9 +21,9 @@ const ReadyFinishButtons = ({ allTasksCompleted, readyTime, finishTime, onReadyC
       <Button 
         className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white" 
         onClick={onFinishClick}
-        disabled={!readyTime || finishTime !== null}
+        disabled={!readyTime || finishTime !== null || isSubmitting}
       >
-        Finalizar
+        {isSubmitting ? 'Processando...' : 'Finalizar'}
       </Button>
       
       {finishTime && (
