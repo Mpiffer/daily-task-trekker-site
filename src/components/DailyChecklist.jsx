@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
+import { Card } from "@/components/ui/card"
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const defaultTasks = [
@@ -26,6 +27,7 @@ const DailyChecklist = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [productName, setProductName] = useState('');
   const [readyTime, setReadyTime] = useState(null);
+  const [completedCard, setCompletedCard] = useState(null);
 
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
 
@@ -78,21 +80,19 @@ const DailyChecklist = () => {
     setReadyTime(newReadyTime);
     saveData(tasks, productName, newReadyTime);
     
-    // Generate log
     const dateKey = format(currentDate, 'yyyy-MM-dd');
     const completedTasks = Object.entries(tasks[dateKey] || {})
       .filter(([_, task]) => task.checked)
       .map(([index, task]) => `${defaultTasks[index]}: ${task.time}`);
     
-    const log = `
-      Data: ${formattedDate}
-      Produto: ${productName}
-      Horário de conclusão: ${newReadyTime}
-      Tarefas concluídas:
-      ${completedTasks.join('\n')}
-    `;
+    const cardContent = {
+      productName,
+      date: formattedDate,
+      readyTime: newReadyTime,
+      completedTasks
+    };
     
-    console.log(log); // You can replace this with a function to save the log to a database or file
+    setCompletedCard(cardContent);
   };
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -149,6 +149,19 @@ const DailyChecklist = () => {
         <p className="mt-2 text-center text-green-600">
           Pronto às {readyTime}
         </p>
+      )}
+      
+      {completedCard && (
+        <Card className="mt-4 p-4">
+          <h3 className="text-lg font-bold">{completedCard.productName}</h3>
+          <p>Data: {completedCard.date}</p>
+          <p>Concluído às: {completedCard.readyTime}</p>
+          <ul className="mt-2">
+            {completedCard.completedTasks.map((task, index) => (
+              <li key={index}>{task}</li>
+            ))}
+          </ul>
+        </Card>
       )}
       
       <Button className="mt-4 w-full" onClick={() => setShowCalendar(!showCalendar)}>
