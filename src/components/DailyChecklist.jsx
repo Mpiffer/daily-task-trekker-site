@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, addDays, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button"
@@ -26,18 +26,27 @@ const DailyChecklist = () => {
 
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
 
+  useEffect(() => {
+    const savedTasks = localStorage.getItem('dailyChecklist');
+    if (savedTasks) {
+      setTasks(JSON.parse(savedTasks));
+    }
+  }, []);
+
   const handlePreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
   const toggleTask = (index) => {
     const dateKey = format(currentDate, 'yyyy-MM-dd');
-    setTasks(prevTasks => ({
-      ...prevTasks,
+    const updatedTasks = {
+      ...tasks,
       [dateKey]: {
-        ...prevTasks[dateKey],
-        [index]: !prevTasks[dateKey]?.[index]
+        ...tasks[dateKey],
+        [index]: !tasks[dateKey]?.[index]
       }
-    }));
+    };
+    setTasks(updatedTasks);
+    localStorage.setItem('dailyChecklist', JSON.stringify(updatedTasks));
   };
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
