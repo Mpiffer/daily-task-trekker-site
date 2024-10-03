@@ -31,7 +31,7 @@ const DailyChecklist = () => {
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 
-  const { data: checklist, isLoading } = useChecklist(dateKey);
+  const { data: checklist, isLoading, refetch } = useChecklist(dateKey);
   const addChecklist = useAddChecklist();
   const updateChecklist = useUpdateChecklist();
 
@@ -101,7 +101,7 @@ const DailyChecklist = () => {
       localStorage.setItem('readyLogs', JSON.stringify(savedLogs));
 
       // Refresh the checklist data
-      await checklist.refetch();
+      await refetch();
     } catch (error) {
       console.error("Error saving checklist:", error);
     }
