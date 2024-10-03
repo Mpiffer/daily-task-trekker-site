@@ -2,7 +2,7 @@ import { HomeIcon, ClipboardListIcon, BugIcon, ClockIcon } from "lucide-react";
 import Index from "./pages/Index.jsx";
 import PatchNotes from "./components/PatchNotes.jsx";
 import Troubleshoot from "./components/Troubleshoot.jsx";
-import LogTab from "./components/LogTab.jsx";
+import ChecklistLog from "./components/ChecklistLog.jsx";
 
 export const navItems = [
   {
@@ -27,6 +27,6 @@ export const navItems = [
     title: "Log",
     to: "/log",
     icon: <ClockIcon className="h-4 w-4" />,
-    page: <LogTab />,
+    page: <ChecklistLog />,
   },
 ];

@@ -1,15 +1,39 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../integrations/supabase/supabase';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const PatchNotes = () => {
-  const [patchNotes, setPatchNotes] = useState([]);
   const [newNote, setNewNote] = useState({ title: '', description: '' });
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const savedNotes = localStorage.getItem('patchNotes');
-    if (savedNotes) {
-      setPatchNotes(JSON.parse(savedNotes));
-    }
-  }, []);
+  const { data: patchNotes, isLoading } = useQuery({
+    queryKey: ['patchNotes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('patch_notes')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const addPatchNote = useMutation({
+    mutationFn: async (newNote) => {
+      const { data, error } = await supabase
+        .from('patch_notes')
+        .insert([{ ...newNote, created_at: new Date().toISOString() }]);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries('patchNotes');
+      setNewNote({ title: '', description: '' });
+    },
+  });
 
   const handleInputChange = (e) => {
     setNewNote({ ...newNote, [e.target.name]: e.target.value });
@@ -17,47 +41,41 @@ const PatchNotes = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const updatedNotes = [
-      { ...newNote, date: new Date().toLocaleDateString() },
-      ...patchNotes
-    ];
-    setPatchNotes(updatedNotes);
-    localStorage.setItem('patchNotes', JSON.stringify(updatedNotes));
-    setNewNote({ title: '', description: '' });
+    addPatchNote.mutate(newNote);
   };
+
+  if (isLoading) return <div>Loading...</div>;
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Patch Notes</h1>
       
-      <form onSubmit={handleSubmit} className="mb-8">
-        <input
+      <form onSubmit={handleSubmit} className="mb-8 space-y-4">
+        <Input
           type="text"
           name="title"
           value={newNote.title}
           onChange={handleInputChange}
           placeholder="Título da atualização"
-          className="w-full p-2 mb-2 border rounded"
           required
         />
-        <textarea
+        <Textarea
           name="description"
           value={newNote.description}
           onChange={handleInputChange}
           placeholder="Descrição da atualização"
-          className="w-full p-2 mb-2 border rounded"
           required
         />
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+        <Button type="submit" className="w-full">
           Adicionar Patch Note
-        </button>
+        </Button>
       </form>
 
-      <div>
-        {patchNotes.map((note, index) => (
-          <div key={index} className="mb-4 p-4 border rounded">
+      <div className="space-y-4">
+        {patchNotes?.map((note) => (
+          <div key={note.id} className="bg-gray-100 p-4 rounded-lg">
             <h2 className="text-xl font-semibold">{note.title}</h2>
-            <p className="text-gray-600 text-sm">{note.date}</p>
+            <p className="text-gray-600 text-sm">{new Date(note.created_at).toLocaleString()}</p>
             <p className="mt-2">{note.description}</p>
           </div>
         ))}
