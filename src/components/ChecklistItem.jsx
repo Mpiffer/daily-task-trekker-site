@@ -1,24 +1,29 @@
 import React from 'react';
 import { Checkbox } from "@/components/ui/checkbox"
 
-const ChecklistItem = ({ task, onToggle }) => {
+const ChecklistItem = ({ task, checked, time, onToggle }) => {
   return (
-    <li className="flex items-center space-x-2">
+    <motion.li 
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="flex items-center space-x-2 p-2 bg-gray-100 dark:bg-gray-700 rounded"
+    >
       <Checkbox
-        id={`task-${task.id}`}
-        checked={task.checked}
+        id={`task-${task}`}
+        checked={checked}
         onCheckedChange={onToggle}
       />
       <label
-        htmlFor={`task-${task.id}`}
-        className={`flex-grow ${task.checked ? 'line-through text-gray-500' : ''}`}
+        htmlFor={`task-${task}`}
+        className={`flex-grow cursor-pointer ${checked ? 'line-through text-gray-500 dark:text-gray-400' : 'dark:text-white'}`}
       >
-        {task.text}
+        {task}
       </label>
-      {task.time && (
-        <span className="text-sm text-gray-500">{task.time}</span>
+      {time && (
+        <span className="text-sm text-gray-500 dark:text-gray-400">{time}</span>
       )}
-    </li>
+    </motion.li>
   );
 };
 

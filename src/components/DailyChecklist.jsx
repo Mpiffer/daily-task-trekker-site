@@ -9,6 +9,9 @@ import { ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-react';
 import { useChecklist } from '@/integrations/supabase';
 import { motion } from 'framer-motion';
 import { useTheme } from 'next-themes';
+import ChecklistItem from './ChecklistItem';
+import DateNavigation from './DateNavigation';
+import ReadyFinishButtons from './ReadyFinishButtons';
 
 const defaultTasks = [
   "Revisar e-mails importantes",
@@ -45,15 +48,16 @@ const DailyChecklist = ({ onUpdate }) => {
       setFinishTime(currentChecklist.finish_time || null);
       setTasks(currentChecklist.tasks || {});
     } else {
-      setProduct('');
-      setReadyTime(null);
-      setFinishTime(null);
-      setTasks({});
+      resetChecklist();
     }
   }, [checklist]);
 
-  const handlePreviousDay = () => setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() - 1)));
-  const handleNextDay = () => setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() + 1)));
+  const resetChecklist = () => {
+    setProduct('');
+    setReadyTime(null);
+    setFinishTime(null);
+    setTasks({});
+  };
 
   const toggleTask = (index) => {
     setTasks(prevTasks => ({
@@ -70,6 +74,7 @@ const DailyChecklist = ({ onUpdate }) => {
   };
 
   const handleReadyClick = () => {
+    if (readyTime) return; // Prevent multiple clicks
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
     
@@ -83,22 +88,21 @@ const DailyChecklist = ({ onUpdate }) => {
     onUpdate(checklistData);
   };
 
+  const handleFinishClick = () => {
+    if (finishTime) return; // Prevent multiple clicks
+    const newFinishTime = new Date().toLocaleTimeString();
+    setFinishTime(newFinishTime);
+    
+    const checklistData = {
+      product: product,
+      ready_time: readyTime,
+      finish_time: newFinishTime,
+      tasks: tasks,
+      created_at: dateKey
+    };
 
-const handleFinishClick = () => {
-  const newFinishTime = new Date().toLocaleTimeString();
-  setFinishTime(newFinishTime);
-  
-  const checklistData = {
-    product: product,
-    ready_time: readyTime,
-    finish_time: newFinishTime,
-    tasks: tasks,
-    created_at: dateKey
+    onUpdate(checklistData);
   };
-
-  onUpdate(checklistData);
-};
-
 
   const allTasksCompleted = Object.keys(tasks).length === defaultTasks.length && 
                             Object.values(tasks).every(task => task.checked);
@@ -114,11 +118,11 @@ const handleFinishClick = () => {
       transition={{ duration: 0.5 }}
       className="max-w-md mx-auto p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"
     >
-      <div className="flex items-center justify-between mb-4">
-        <Button onClick={handlePreviousDay}><ChevronLeft /></Button>
-        <h2 className="text-xl font-bold dark:text-white">{`Checklist - ${formattedDate}`}</h2>
-        <Button onClick={handleNextDay}><ChevronRight /></Button>
-      </div>
+      <DateNavigation 
+        currentDate={currentDate}
+        setCurrentDate={setCurrentDate}
+        formattedDate={formattedDate}
+      />
       
       <Input
         type="text"
@@ -130,58 +134,23 @@ const handleFinishClick = () => {
       
       <ul className="space-y-2">
         {defaultTasks.map((task, index) => (
-          <motion.li 
+          <ChecklistItem
             key={index}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-            className="flex items-center space-x-2 p-2 bg-gray-100 dark:bg-gray-700 rounded"
-          >
-            <Checkbox
-              id={`task-${index}`}
-              checked={tasks[index]?.checked || false}
-              onCheckedChange={() => toggleTask(index)}
-            />
-            <label
-              htmlFor={`task-${index}`}
-              className={`flex-grow cursor-pointer ${tasks[index]?.checked ? 'line-through text-gray-500 dark:text-gray-400' : 'dark:text-white'}`}
-            >
-              {task}
-            </label>
-            {tasks[index]?.time && (
-              <span className="text-sm text-gray-500 dark:text-gray-400">{tasks[index].time}</span>
-            )}
-          </motion.li>
+            task={task}
+            checked={tasks[index]?.checked || false}
+            time={tasks[index]?.time}
+            onToggle={() => toggleTask(index)}
+          />
         ))}
       </ul>
       
-      <Button 
-        className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white" 
-        onClick={handleReadyClick}
-        disabled={!allTasksCompleted || readyTime !== null}
-      >
-        Ready
-      </Button>
-      
-      {readyTime && (
-        <p className="mt-2 text-center text-green-600 dark:text-green-400">
-          Pronto às {readyTime}
-        </p>
-      )}
-      
-      <Button 
-        className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white" 
-        onClick={handleFinishClick}
-        disabled={!readyTime || finishTime !== null}
-      >
-        Finalizar
-      </Button>
-      
-      {finishTime && (
-        <p className="mt-2 text-center text-blue-600 dark:text-blue-400">
-          Finalizado às {finishTime}
-        </p>
-      )}
+      <ReadyFinishButtons
+        allTasksCompleted={allTasksCompleted}
+        readyTime={readyTime}
+        finishTime={finishTime}
+        onReadyClick={handleReadyClick}
+        onFinishClick={handleFinishClick}
+      />
       
       <Button className="mt-4 w-full" onClick={() => setShowCalendar(!showCalendar)}>
         {showCalendar ? 'Fechar Calendário' : 'Abrir Calendário'}
