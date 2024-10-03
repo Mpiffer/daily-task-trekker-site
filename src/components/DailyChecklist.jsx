@@ -4,6 +4,7 @@ import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar } from "@/components/ui/calendar"
+import { Input } from "@/components/ui/input"
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const defaultTasks = [
@@ -23,15 +24,29 @@ const DailyChecklist = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [tasks, setTasks] = useState({});
   const [showCalendar, setShowCalendar] = useState(false);
+  const [productName, setProductName] = useState('');
+  const [readyTime, setReadyTime] = useState(null);
 
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
 
   useEffect(() => {
-    const savedTasks = localStorage.getItem('dailyChecklist');
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
+    const savedData = localStorage.getItem('dailyChecklist');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      setTasks(parsedData.tasks || {});
+      setProductName(parsedData.productName || '');
+      setReadyTime(parsedData.readyTime || null);
     }
-  }, []);
+  }, [currentDate]);
+
+  const saveData = (newTasks, newProductName, newReadyTime) => {
+    const dataToSave = {
+      tasks: newTasks,
+      productName: newProductName,
+      readyTime: newReadyTime
+    };
+    localStorage.setItem('dailyChecklist', JSON.stringify(dataToSave));
+  };
 
   const handlePreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
@@ -42,15 +57,32 @@ const DailyChecklist = () => {
       ...tasks,
       [dateKey]: {
         ...tasks[dateKey],
-        [index]: !tasks[dateKey]?.[index]
+        [index]: {
+          ...tasks[dateKey]?.[index],
+          checked: !tasks[dateKey]?.[index]?.checked,
+          time: tasks[dateKey]?.[index]?.checked ? null : new Date().toLocaleTimeString()
+        }
       }
     };
     setTasks(updatedTasks);
-    localStorage.setItem('dailyChecklist', JSON.stringify(updatedTasks));
+    saveData(updatedTasks, productName, readyTime);
+  };
+
+  const handleProductNameChange = (e) => {
+    setProductName(e.target.value);
+    saveData(tasks, e.target.value, readyTime);
+  };
+
+  const handleReadyClick = () => {
+    const newReadyTime = new Date().toLocaleTimeString();
+    setReadyTime(newReadyTime);
+    saveData(tasks, productName, newReadyTime);
   };
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
   const currentTasks = tasks[dateKey] || {};
+
+  const allTasksCompleted = Object.values(currentTasks).every(task => task?.checked);
 
   return (
     <div className="max-w-md mx-auto p-4">
@@ -60,25 +92,50 @@ const DailyChecklist = () => {
         <Button onClick={handleNextDay}><ChevronRight /></Button>
       </div>
       
+      <Input
+        type="text"
+        placeholder="Nome do Produto"
+        value={productName}
+        onChange={handleProductNameChange}
+        className="mb-4"
+      />
+      
       <ul className="space-y-2">
         {defaultTasks.map((task, index) => (
           <li key={index} className="flex items-center space-x-2">
             <Checkbox
               id={`task-${index}`}
-              checked={currentTasks[index] || false}
+              checked={currentTasks[index]?.checked || false}
               onCheckedChange={() => toggleTask(index)}
             />
             <label
               htmlFor={`task-${index}`}
-              className={`flex-grow ${currentTasks[index] ? 'line-through text-gray-500' : ''}`}
+              className={`flex-grow ${currentTasks[index]?.checked ? 'line-through text-gray-500' : ''}`}
             >
               {task}
             </label>
+            {currentTasks[index]?.time && (
+              <span className="text-sm text-gray-500">{currentTasks[index].time}</span>
+            )}
           </li>
         ))}
       </ul>
       
-      <Button className="mt-4" onClick={() => setShowCalendar(!showCalendar)}>
+      <Button 
+        className="mt-4 w-full" 
+        onClick={handleReadyClick}
+        disabled={!allTasksCompleted}
+      >
+        Ready
+      </Button>
+      
+      {readyTime && (
+        <p className="mt-2 text-center text-green-600">
+          Pronto às {readyTime}
+        </p>
+      )}
+      
+      <Button className="mt-4 w-full" onClick={() => setShowCalendar(!showCalendar)}>
         {showCalendar ? 'Fechar Calendário' : 'Abrir Calendário'}
       </Button>
       
