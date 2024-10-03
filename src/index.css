@@ -74,3 +74,34 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for dark mode */
+.dark body {
+  @apply bg-gray-900 text-white;
+}
+
+.dark .bg-white {
+  @apply bg-gray-800;
+}
+
+.dark .text-gray-500 {
+  @apply text-gray-400;
+}
+
+.dark .bg-gray-100 {
+  @apply bg-gray-700;
+}
+
+/* Animation for checkbox */
+@keyframes checkmark {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-checkmark {
+  animation: checkmark 0.2s ease-in-out;
+}

@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-react';
 import { useChecklist } from '@/integrations/supabase';
+import { motion } from 'framer-motion';
+import { useTheme } from 'next-themes';
 
 const defaultTasks = [
   "Revisar e-mails importantes",
@@ -27,6 +29,7 @@ const DailyChecklist = ({ onUpdate }) => {
   const [product, setProduct] = useState('');
   const [readyTime, setReadyTime] = useState(null);
   const [tasks, setTasks] = useState({});
+  const { theme, setTheme } = useTheme();
 
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -85,10 +88,15 @@ const DailyChecklist = ({ onUpdate }) => {
   }
 
   return (
-    <div className="max-w-md mx-auto p-4">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="max-w-md mx-auto p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"
+    >
       <div className="flex items-center justify-between mb-4">
         <Button onClick={handlePreviousDay}><ChevronLeft /></Button>
-        <h2 className="text-xl font-bold">{`Checklist - ${formattedDate}`}</h2>
+        <h2 className="text-xl font-bold dark:text-white">{`Checklist - ${formattedDate}`}</h2>
         <Button onClick={handleNextDay}><ChevronRight /></Button>
       </div>
       
@@ -102,7 +110,13 @@ const DailyChecklist = ({ onUpdate }) => {
       
       <ul className="space-y-2">
         {defaultTasks.map((task, index) => (
-          <li key={index} className="flex items-center space-x-2">
+          <motion.li 
+            key={index}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
+            className="flex items-center space-x-2 p-2 bg-gray-100 dark:bg-gray-700 rounded"
+          >
             <Checkbox
               id={`task-${index}`}
               checked={tasks[index]?.checked || false}
@@ -110,19 +124,19 @@ const DailyChecklist = ({ onUpdate }) => {
             />
             <label
               htmlFor={`task-${index}`}
-              className={`flex-grow ${tasks[index]?.checked ? 'line-through text-gray-500' : ''}`}
+              className={`flex-grow cursor-pointer ${tasks[index]?.checked ? 'line-through text-gray-500 dark:text-gray-400' : 'dark:text-white'}`}
             >
               {task}
             </label>
             {tasks[index]?.time && (
-              <span className="text-sm text-gray-500">{tasks[index].time}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{tasks[index].time}</span>
             )}
-          </li>
+          </motion.li>
         ))}
       </ul>
       
       <Button 
-        className="mt-4 w-full" 
+        className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white" 
         onClick={handleReadyClick}
         disabled={!allTasksCompleted || readyTime !== null}
       >
@@ -130,7 +144,7 @@ const DailyChecklist = ({ onUpdate }) => {
       </Button>
       
       {readyTime && (
-        <p className="mt-2 text-center text-green-600">
+        <p className="mt-2 text-center text-green-600 dark:text-green-400">
           Pronto às {readyTime}
         </p>
       )}
@@ -150,7 +164,15 @@ const DailyChecklist = ({ onUpdate }) => {
           className="mt-4"
         />
       )}
-    </div>
+
+      <Button
+        className="mt-4 w-full"
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      >
+        {theme === 'dark' ? <Sun className="mr-2" /> : <Moon className="mr-2" />}
+        {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+      </Button>
+    </motion.div>
   );
 };
 
