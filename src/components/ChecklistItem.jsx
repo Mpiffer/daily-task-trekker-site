@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Checkbox } from "@/components/ui/checkbox"
 
 const ChecklistItem = ({ task, checked, time, onToggle }) => {
