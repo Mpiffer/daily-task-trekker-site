@@ -39,44 +39,51 @@ const useChecklist = (dateKey) => {
     }
   }, [checklist]);
 
-  const updateSupabase = async (newData) => {
+  const toggleTask = (taskId) => {
+    setTasks(prevTasks => ({
+      ...prevTasks,
+      [taskId]: {
+        ...prevTasks[taskId],
+        checked: !prevTasks[taskId].checked,
+        time: !prevTasks[taskId].checked ? new Date().toLocaleTimeString() : null
+      }
+    }));
+  };
+
+  const handleReadyClick = () => {
+    const newReadyTime = new Date().toLocaleTimeString();
+    setReadyTime(newReadyTime);
+  };
+
+  const saveChecklist = async () => {
+    const checklistData = {
+      product,
+      ready_time: readyTime,
+      tasks,
+      created_at: dateKey
+    };
+
     try {
       if (checklist && checklist.length > 0) {
-        await updateChecklist.mutateAsync({ id: checklist[0].id, ...newData });
+        await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
       } else {
-        await addChecklist.mutateAsync(newData);
+        await addChecklist.mutateAsync(checklistData);
       }
       await refetch();
     } catch (error) {
-      console.error("Error updating checklist:", error);
+      console.error("Error saving checklist:", error);
     }
   };
 
-  const toggleTask = async (taskId) => {
-    const newTasks = {
-      ...tasks,
-      [taskId]: {
-        ...tasks[taskId],
-        checked: !tasks[taskId].checked,
-        time: !tasks[taskId].checked ? new Date().toLocaleTimeString() : null
-      }
-    };
-    setTasks(newTasks);
-    await updateSupabase({ tasks: newTasks, product, ready_time: readyTime, created_at: dateKey });
+  return { 
+    tasks, 
+    product, 
+    readyTime, 
+    setProduct, 
+    toggleTask, 
+    handleReadyClick,
+    saveChecklist
   };
-
-  const handleProductChange = async (newProduct) => {
-    setProduct(newProduct);
-    await updateSupabase({ tasks, product: newProduct, ready_time: readyTime, created_at: dateKey });
-  };
-
-  const handleReadyClick = async () => {
-    const newReadyTime = new Date().toLocaleTimeString();
-    setReadyTime(newReadyTime);
-    await updateSupabase({ tasks, product, ready_time: newReadyTime, created_at: dateKey });
-  };
-
-  return { tasks, product, readyTime, toggleTask, handleProductChange, handleReadyClick };
 };
 
 export default useChecklist;
