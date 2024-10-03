@@ -16,7 +16,7 @@ const WIP = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('wip_ideas')
-        .select('*')
+        .select('*, wip_comments(*)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
@@ -127,7 +127,11 @@ const WIP = () => {
 
       <div className="space-y-4">
         {ideas?.map((idea) => (
-          <div key={idea.id} className="bg-gray-100 p-4 rounded-lg">
+          <div key={idea.id} className={`bg-gray-100 p-4 rounded-lg ${
+            idea.status === 'green' ? 'border-l-4 border-green-500' :
+            idea.status === 'yellow' ? 'border-l-4 border-yellow-500' :
+            idea.status === 'red' ? 'border-l-4 border-red-500' : ''
+          }`}>
             <h2 className="text-xl font-semibold">{idea.title}</h2>
             <p className="text-gray-600 text-sm">Importância: {idea.importance}</p>
             <p className="mt-2">{idea.description}</p>
@@ -145,6 +149,12 @@ const WIP = () => {
                 className="mb-2"
               />
               <Button onClick={() => handleCommentSubmit(idea.id)}>Adicionar Comentário</Button>
+            </div>
+            <div className="mt-4">
+              <h3 className="font-semibold">Comentários:</h3>
+              {idea.wip_comments?.map((comment) => (
+                <p key={comment.id} className="text-sm mt-1">{comment.comment}</p>
+              ))}
             </div>
           </div>
         ))}
