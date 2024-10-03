@@ -84,15 +84,17 @@ const DailyChecklist = () => {
       .filter(([_, task]) => task.checked)
       .map(([index, task]) => `${defaultTasks[index]}: ${task.time}`);
     
-    const log = `
-      Data: ${formattedDate}
-      Produto: ${productName}
-      Horário de conclusão: ${newReadyTime}
-      Tarefas concluídas:
-      ${completedTasks.join('\n')}
-    `;
+    const log = {
+      date: formattedDate,
+      productName: productName,
+      readyTime: newReadyTime,
+      completedTasks: completedTasks
+    };
     
-    console.log(log); // You can replace this with a function to save the log to a database or file
+    // Save log to localStorage
+    const savedLogs = JSON.parse(localStorage.getItem('readyLogs') || '[]');
+    savedLogs.push(log);
+    localStorage.setItem('readyLogs', JSON.stringify(savedLogs));
   };
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');

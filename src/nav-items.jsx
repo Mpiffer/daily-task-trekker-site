@@ -1,14 +1,32 @@
-import { HomeIcon } from "lucide-react";
+import { HomeIcon, ClipboardListIcon, BugIcon, ClockIcon } from "lucide-react";
 import Index from "./pages/Index.jsx";
+import PatchNotes from "./components/PatchNotes.jsx";
+import Troubleshoot from "./components/Troubleshoot.jsx";
+import LogTab from "./components/LogTab.jsx";
 
-/**
- * Central place for defining the navigation items. Used for navigation components and routing.
- */
 export const navItems = [
   {
     title: "Home",
     to: "/",
     icon: <HomeIcon className="h-4 w-4" />,
     page: <Index />,
+  },
+  {
+    title: "Patch Notes",
+    to: "/patch-notes",
+    icon: <ClipboardListIcon className="h-4 w-4" />,
+    page: <PatchNotes />,
+  },
+  {
+    title: "Troubleshoot",
+    to: "/troubleshoot",
+    icon: <BugIcon className="h-4 w-4" />,
+    page: <Troubleshoot />,
+  },
+  {
+    title: "Log",
+    to: "/log",
+    icon: <ClockIcon className="h-4 w-4" />,
+    page: <LogTab />,
   },
 ];
