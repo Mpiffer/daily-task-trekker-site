@@ -8,6 +8,7 @@ import TopMenu from "./components/TopMenu";
 import PatchNotes from "./components/PatchNotes";
 import Troubleshoot from "./components/Troubleshoot";
 import ChecklistLog from "./components/ChecklistLog";
+import WIP from "./components/WIP";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/patch-notes" element={<PatchNotes />} />
             <Route path="/troubleshoot" element={<Troubleshoot />} />
             <Route path="/log" element={<ChecklistLog />} />
+            <Route path="/wip" element={<WIP />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
