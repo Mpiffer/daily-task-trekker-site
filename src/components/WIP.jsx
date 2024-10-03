@@ -26,7 +26,7 @@ const WIP = () => {
     mutationFn: async (newIdea) => {
       const { data, error } = await supabase
         .from('wip_ideas')
-        .insert([{ ...newIdea, created_at: new Date().toISOString() }]);
+        .insert([newIdea]);
       if (error) throw error;
       return data;
     },
