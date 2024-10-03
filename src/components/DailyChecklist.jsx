@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useChecklist, useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
+import { useChecklist } from '@/integrations/supabase';
 
 const defaultTasks = [
   "Revisar e-mails importantes",
@@ -21,7 +21,7 @@ const defaultTasks = [
   "Atualizar o cronograma de trabalho"
 ];
 
-const DailyChecklist = () => {
+const DailyChecklist = ({ onUpdate }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
   const [product, setProduct] = useState('');
@@ -31,9 +31,7 @@ const DailyChecklist = () => {
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 
-  const { data: checklist, isLoading, refetch } = useChecklist(dateKey);
-  const addChecklist = useAddChecklist();
-  const updateChecklist = useUpdateChecklist();
+  const { data: checklist, isLoading } = useChecklist(dateKey);
 
   useEffect(() => {
     if (checklist && checklist.length > 0) {
@@ -51,59 +49,21 @@ const DailyChecklist = () => {
   const handlePreviousDay = () => setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() - 1)));
   const handleNextDay = () => setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() + 1)));
 
-  const toggleTask = async (index) => {
-    const newTasks = {
-      ...tasks,
+  const toggleTask = (index) => {
+    setTasks(prevTasks => ({
+      ...prevTasks,
       [index]: {
-        checked: !tasks[index]?.checked,
-        time: !tasks[index]?.checked ? new Date().toLocaleTimeString() : null
+        checked: !prevTasks[index]?.checked,
+        time: !prevTasks[index]?.checked ? new Date().toLocaleTimeString() : null
       }
-    };
-    setTasks(newTasks);
-
-    const checklistData = {
-      product: product,
-      ready_time: readyTime,
-      tasks: newTasks,
-      created_at: dateKey
-    };
-
-    try {
-      if (checklist && checklist.length > 0) {
-        await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
-      } else {
-        await addChecklist.mutateAsync(checklistData);
-      }
-      await refetch();
-    } catch (error) {
-      console.error("Error updating checklist:", error);
-    }
+    }));
   };
 
-  const handleProductChange = async (e) => {
-    const newProduct = e.target.value;
-    setProduct(newProduct);
-
-    const checklistData = {
-      product: newProduct,
-      ready_time: readyTime,
-      tasks: tasks,
-      created_at: dateKey
-    };
-
-    try {
-      if (checklist && checklist.length > 0) {
-        await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
-      } else {
-        await addChecklist.mutateAsync(checklistData);
-      }
-      await refetch();
-    } catch (error) {
-      console.error("Error updating product:", error);
-    }
+  const handleProductChange = (e) => {
+    setProduct(e.target.value);
   };
 
-  const handleReadyClick = async () => {
+  const handleReadyClick = () => {
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
     
@@ -114,16 +74,7 @@ const DailyChecklist = () => {
       created_at: dateKey
     };
 
-    try {
-      if (checklist && checklist.length > 0) {
-        await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
-      } else {
-        await addChecklist.mutateAsync(checklistData);
-      }
-      await refetch();
-    } catch (error) {
-      console.error("Error updating checklist:", error);
-    }
+    onUpdate(checklistData);
   };
 
   const allTasksCompleted = Object.keys(tasks).length === defaultTasks.length && 
