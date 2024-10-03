@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useChecklist } from '@/integrations/supabase';
+import { useChecklist, useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
 import { useTheme } from 'next-themes';
 import ChecklistItem from './ChecklistItem';
 import DateNavigation from './DateNavigation';
@@ -22,7 +22,7 @@ const defaultTasks = [
   "Atualizar o cronograma de trabalho"
 ];
 
-const DailyChecklist = ({ onUpdate }) => {
+const DailyChecklist = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
   const [product, setProduct] = useState('');
@@ -36,6 +36,8 @@ const DailyChecklist = ({ onUpdate }) => {
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 
   const { data: checklist, isLoading, refetch } = useChecklist(dateKey);
+  const addChecklist = useAddChecklist();
+  const updateChecklist = useUpdateChecklist();
 
   useEffect(() => {
     if (checklist && checklist.length > 0) {
@@ -83,7 +85,11 @@ const DailyChecklist = ({ onUpdate }) => {
     };
 
     try {
-      await onUpdate(checklistData);
+      if (checklist && checklist.length > 0) {
+        await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
+      } else {
+        await addChecklist.mutateAsync(checklistData);
+      }
       setReadyTime(newReadyTime);
       await refetch();
     } catch (error) {
@@ -107,7 +113,11 @@ const DailyChecklist = ({ onUpdate }) => {
     };
 
     try {
-      await onUpdate(checklistData);
+      if (checklist && checklist.length > 0) {
+        await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
+      } else {
+        await addChecklist.mutateAsync(checklistData);
+      }
       setFinishTime(newFinishTime);
       await refetch();
     } catch (error) {
