@@ -3,6 +3,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { navItems } from "./nav-items";
+import TopMenu from "./components/TopMenu";
+import PatchNotes from "./components/PatchNotes";
 
 const queryClient = new QueryClient();
 
@@ -11,10 +13,12 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <BrowserRouter>
+        <TopMenu />
         <Routes>
           {navItems.map(({ to, page }) => (
             <Route key={to} path={to} element={page} />
           ))}
+          <Route path="/patch-notes" element={<PatchNotes />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
