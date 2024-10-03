@@ -1,137 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Calendar } from "@/components/ui/calendar"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useChecklist, useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
-
-const defaultTasks = [
-  "Revisar e-mails importantes",
-  "Realizar chamadas de clientes",
-  "Planejar tarefas do dia seguinte",
-  "Verificar metas diárias",
-  "Organizar documentos",
-  "Revisar relatórios financeiros",
-  "Analisar feedback de clientes",
-  "Preparar apresentações",
-  "Participar de reuniões programadas",
-  "Atualizar o cronograma de trabalho"
-];
+import ChecklistItem from './ChecklistItem';
+import useChecklist from '../hooks/useChecklist';
 
 const DailyChecklist = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [showCalendar, setShowCalendar] = useState(false);
   const [product, setProduct] = useState('');
-  const [readyTime, setReadyTime] = useState(null);
-  const [tasks, setTasks] = useState({});
-
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 
-  const { data: checklist, isLoading, refetch } = useChecklist(dateKey);
-  const addChecklist = useAddChecklist();
-  const updateChecklist = useUpdateChecklist();
-
-  useEffect(() => {
-    if (checklist && checklist.length > 0) {
-      const currentChecklist = checklist[0];
-      setProduct(currentChecklist.product || '');
-      setReadyTime(currentChecklist.ready_time || null);
-      setTasks(currentChecklist.tasks || {});
-    } else {
-      setProduct('');
-      setReadyTime(null);
-      setTasks({});
-    }
-  }, [checklist]);
+  const { tasks, readyTime, toggleTask, handleProductChange, handleReadyClick } = useChecklist(dateKey);
 
   const handlePreviousDay = () => setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() - 1)));
   const handleNextDay = () => setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() + 1)));
-
-  const toggleTask = async (index) => {
-    const newTasks = {
-      ...tasks,
-      [index]: {
-        checked: !tasks[index]?.checked,
-        time: !tasks[index]?.checked ? new Date().toLocaleTimeString() : null
-      }
-    };
-    setTasks(newTasks);
-
-    const checklistData = {
-      product: product,
-      ready_time: readyTime,
-      tasks: newTasks,
-      created_at: dateKey
-    };
-
-    try {
-      if (checklist && checklist.length > 0) {
-        await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
-      } else {
-        await addChecklist.mutateAsync(checklistData);
-      }
-      await refetch();
-    } catch (error) {
-      console.error("Error updating checklist:", error);
-    }
-  };
-
-  const handleProductChange = async (e) => {
-    const newProduct = e.target.value;
-    setProduct(newProduct);
-
-    const checklistData = {
-      product: newProduct,
-      ready_time: readyTime,
-      tasks: tasks,
-      created_at: dateKey
-    };
-
-    try {
-      if (checklist && checklist.length > 0) {
-        await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
-      } else {
-        await addChecklist.mutateAsync(checklistData);
-      }
-      await refetch();
-    } catch (error) {
-      console.error("Error updating product:", error);
-    }
-  };
-
-  const handleReadyClick = async () => {
-    const newReadyTime = new Date().toLocaleTimeString();
-    setReadyTime(newReadyTime);
-    
-    const checklistData = {
-      product: product,
-      ready_time: newReadyTime,
-      tasks: tasks,
-      created_at: dateKey
-    };
-
-    try {
-      if (checklist && checklist.length > 0) {
-        await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
-      } else {
-        await addChecklist.mutateAsync(checklistData);
-      }
-      await refetch();
-    } catch (error) {
-      console.error("Error updating checklist:", error);
-    }
-  };
-
-  const allTasksCompleted = Object.keys(tasks).length === defaultTasks.length && 
-                            Object.values(tasks).every(task => task.checked);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="max-w-md mx-auto p-4">
@@ -145,35 +30,24 @@ const DailyChecklist = () => {
         type="text"
         placeholder="Nome do Produto"
         value={product}
-        onChange={handleProductChange}
+        onChange={(e) => handleProductChange(e.target.value)}
         className="mb-4"
       />
       
       <ul className="space-y-2">
-        {defaultTasks.map((task, index) => (
-          <li key={index} className="flex items-center space-x-2">
-            <Checkbox
-              id={`task-${index}`}
-              checked={tasks[index]?.checked || false}
-              onCheckedChange={() => toggleTask(index)}
-            />
-            <label
-              htmlFor={`task-${index}`}
-              className={`flex-grow ${tasks[index]?.checked ? 'line-through text-gray-500' : ''}`}
-            >
-              {task}
-            </label>
-            {tasks[index]?.time && (
-              <span className="text-sm text-gray-500">{tasks[index].time}</span>
-            )}
-          </li>
+        {Object.entries(tasks).map(([taskId, task]) => (
+          <ChecklistItem
+            key={taskId}
+            task={task}
+            onToggle={() => toggleTask(taskId)}
+          />
         ))}
       </ul>
       
       <Button 
         className="mt-4 w-full" 
         onClick={handleReadyClick}
-        disabled={!allTasksCompleted || readyTime !== null}
+        disabled={!Object.values(tasks).every(task => task.checked) || readyTime !== null}
       >
         Ready
       </Button>
@@ -182,22 +56,6 @@ const DailyChecklist = () => {
         <p className="mt-2 text-center text-green-600">
           Pronto às {readyTime}
         </p>
-      )}
-      
-      <Button className="mt-4 w-full" onClick={() => setShowCalendar(!showCalendar)}>
-        {showCalendar ? 'Fechar Calendário' : 'Abrir Calendário'}
-      </Button>
-      
-      {showCalendar && (
-        <Calendar
-          mode="single"
-          selected={currentDate}
-          onSelect={(date) => {
-            setCurrentDate(date || new Date());
-            setShowCalendar(false);
-          }}
-          className="mt-4"
-        />
       )}
     </div>
   );
