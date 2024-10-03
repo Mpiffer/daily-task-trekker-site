@@ -12,41 +12,23 @@ const fromSupabase = async (query) => {
 
 export const useChecklist = (date) => useQuery({
     queryKey: ['checklists', date],
-    queryFn: async () => {
-        const { data: session } = await supabase.auth.getSession();
-        if (!session) {
-            throw new Error('Not authenticated');
-        }
-        return fromSupabase(
-            supabase
-                .from('Checklist')
-                .select('*')
-                .eq('created_at', date)
-        );
-    },
+    queryFn: () => fromSupabase(
+        supabase
+            .from('Checklist')
+            .select('*')
+            .eq('created_at', date)
+    ),
 });
 
 export const useChecklists = () => useQuery({
     queryKey: ['checklists'],
-    queryFn: async () => {
-        const { data: session } = await supabase.auth.getSession();
-        if (!session) {
-            throw new Error('Not authenticated');
-        }
-        return fromSupabase(supabase.from('Checklist').select('*'));
-    },
+    queryFn: () => fromSupabase(supabase.from('Checklist').select('*')),
 });
 
 export const useAddChecklist = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (newChecklist) => {
-            const { data: session } = await supabase.auth.getSession();
-            if (!session) {
-                throw new Error('Not authenticated');
-            }
-            return fromSupabase(supabase.from('Checklist').insert([newChecklist]));
-        },
+        mutationFn: (newChecklist) => fromSupabase(supabase.from('Checklist').insert([newChecklist])),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['checklists'] });
         },
@@ -56,13 +38,7 @@ export const useAddChecklist = () => {
 export const useUpdateChecklist = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, ...updateData }) => {
-            const { data: session } = await supabase.auth.getSession();
-            if (!session) {
-                throw new Error('Not authenticated');
-            }
-            return fromSupabase(supabase.from('Checklist').update(updateData).eq('id', id));
-        },
+        mutationFn: ({ id, ...updateData }) => fromSupabase(supabase.from('Checklist').update(updateData).eq('id', id)),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['checklists'] });
         },
@@ -72,13 +48,7 @@ export const useUpdateChecklist = () => {
 export const useDeleteChecklist = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (id) => {
-            const { data: session } = await supabase.auth.getSession();
-            if (!session) {
-                throw new Error('Not authenticated');
-            }
-            return fromSupabase(supabase.from('Checklist').delete().eq('id', id));
-        },
+        mutationFn: (id) => fromSupabase(supabase.from('Checklist').delete().eq('id', id)),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['checklists'] });
         },
