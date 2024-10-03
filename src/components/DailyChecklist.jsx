@@ -51,7 +51,7 @@ const DailyChecklist = () => {
   const handlePreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
-  const toggleTask = async (index) => {
+  const toggleTask = (index) => {
     const updatedTasks = {
       ...tasks,
       [index]: {
@@ -60,31 +60,27 @@ const DailyChecklist = () => {
       }
     };
     setTasks(updatedTasks);
-
-    if (checklist && checklist.length > 0) {
-      await updateChecklist.mutateAsync({ id: checklist[0].id, tasks: updatedTasks });
-    } else {
-      await addChecklist.mutateAsync({ tasks: updatedTasks, product, ready_time: readyTime, created_at: dateKey });
-    }
   };
 
-  const handleProductChange = async (e) => {
+  const handleProductChange = (e) => {
     setProduct(e.target.value);
-    if (checklist && checklist.length > 0) {
-      await updateChecklist.mutateAsync({ id: checklist[0].id, product: e.target.value });
-    } else {
-      await addChecklist.mutateAsync({ product: e.target.value, tasks, ready_time: readyTime, created_at: dateKey });
-    }
   };
 
   const handleReadyClick = async () => {
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
     
+    const checklistData = {
+      product: product,
+      ready_time: newReadyTime,
+      tasks: tasks,
+      created_at: dateKey
+    };
+
     if (checklist && checklist.length > 0) {
-      await updateChecklist.mutateAsync({ id: checklist[0].id, ready_time: newReadyTime });
+      await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
     } else {
-      await addChecklist.mutateAsync({ ready_time: newReadyTime, tasks, product, created_at: dateKey });
+      await addChecklist.mutateAsync(checklistData);
     }
     
     // Generate log
