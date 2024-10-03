@@ -8,6 +8,8 @@ const ChecklistUpdater = ({ dateKey, checklistData }) => {
 
   useEffect(() => {
     const updateSupabase = async () => {
+      if (!checklistData.ready_time) return;
+
       try {
         if (checklist && checklist.length > 0) {
           await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
@@ -20,12 +22,10 @@ const ChecklistUpdater = ({ dateKey, checklistData }) => {
       }
     };
 
-    if (checklistData.ready_time) {
-      updateSupabase();
-    }
+    updateSupabase();
   }, [checklistData, checklist, dateKey, addChecklist, updateChecklist, refetch]);
 
-  return null; // This component doesn't render anything
+  return null;
 };
 
 export default ChecklistUpdater;

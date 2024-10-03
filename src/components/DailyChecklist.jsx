@@ -35,7 +35,7 @@ const DailyChecklist = ({ onUpdate }) => {
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 
-  const { data: checklist, isLoading } = useChecklist(dateKey);
+  const { data: checklist, isLoading, refetch } = useChecklist(dateKey);
 
   useEffect(() => {
     if (checklist && checklist.length > 0) {
@@ -71,10 +71,9 @@ const DailyChecklist = ({ onUpdate }) => {
   };
 
   const handleReadyClick = async () => {
-    if (readyTime || isSubmitting) return; // Prevent multiple submissions
+    if (readyTime || isSubmitting) return;
     setIsSubmitting(true);
     const newReadyTime = new Date().toLocaleTimeString();
-    setReadyTime(newReadyTime);
     
     const checklistData = {
       product: product,
@@ -85,19 +84,19 @@ const DailyChecklist = ({ onUpdate }) => {
 
     try {
       await onUpdate(checklistData);
+      setReadyTime(newReadyTime);
+      await refetch();
     } catch (error) {
       console.error("Error updating checklist:", error);
-      setReadyTime(null); // Reset if there's an error
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleFinishClick = async () => {
-    if (finishTime || isSubmitting) return; // Prevent multiple submissions
+    if (finishTime || isSubmitting) return;
     setIsSubmitting(true);
     const newFinishTime = new Date().toLocaleTimeString();
-    setFinishTime(newFinishTime);
     
     const checklistData = {
       product: product,
@@ -109,9 +108,10 @@ const DailyChecklist = ({ onUpdate }) => {
 
     try {
       await onUpdate(checklistData);
+      setFinishTime(newFinishTime);
+      await refetch();
     } catch (error) {
       console.error("Error updating checklist:", error);
-      setFinishTime(null); // Reset if there's an error
     } finally {
       setIsSubmitting(false);
     }
