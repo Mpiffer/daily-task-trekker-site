@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useChecklist, useChecklists, useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
+import { useChecklist, useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
 
 const defaultTasks = [
   "Revisar e-mails importantes",
@@ -36,10 +36,11 @@ const DailyChecklist = () => {
   const updateChecklist = useUpdateChecklist();
 
   useEffect(() => {
-    if (checklist) {
-      setProduct(checklist.product || '');
-      setReadyTime(checklist.ready_time || null);
-      setTasks(checklist.tasks || {});
+    if (checklist && checklist.length > 0) {
+      const currentChecklist = checklist[0];
+      setProduct(currentChecklist.product || '');
+      setReadyTime(currentChecklist.ready_time || null);
+      setTasks(currentChecklist.tasks || {});
     } else {
       setProduct('');
       setReadyTime(null);
@@ -60,8 +61,8 @@ const DailyChecklist = () => {
     };
     setTasks(updatedTasks);
 
-    if (checklist) {
-      await updateChecklist.mutateAsync({ id: checklist.id, tasks: updatedTasks });
+    if (checklist && checklist.length > 0) {
+      await updateChecklist.mutateAsync({ id: checklist[0].id, tasks: updatedTasks });
     } else {
       await addChecklist.mutateAsync({ tasks: updatedTasks, product, ready_time: readyTime, created_at: dateKey });
     }
@@ -69,8 +70,8 @@ const DailyChecklist = () => {
 
   const handleProductChange = async (e) => {
     setProduct(e.target.value);
-    if (checklist) {
-      await updateChecklist.mutateAsync({ id: checklist.id, product: e.target.value });
+    if (checklist && checklist.length > 0) {
+      await updateChecklist.mutateAsync({ id: checklist[0].id, product: e.target.value });
     } else {
       await addChecklist.mutateAsync({ product: e.target.value, tasks, ready_time: readyTime, created_at: dateKey });
     }
@@ -80,8 +81,8 @@ const DailyChecklist = () => {
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
     
-    if (checklist) {
-      await updateChecklist.mutateAsync({ id: checklist.id, ready_time: newReadyTime });
+    if (checklist && checklist.length > 0) {
+      await updateChecklist.mutateAsync({ id: checklist[0].id, ready_time: newReadyTime });
     } else {
       await addChecklist.mutateAsync({ ready_time: newReadyTime, tasks, product, created_at: dateKey });
     }

@@ -3,13 +3,18 @@ import { supabase } from '../supabase';
 
 const fromSupabase = async (query) => {
     const { data, error } = await query;
-    if (error) throw new Error(error.message);
+    if (error) throw error;
     return data;
 };
 
 export const useChecklist = (date) => useQuery({
     queryKey: ['checklists', date],
-    queryFn: () => fromSupabase(supabase.from('Checklist').select('*').eq('created_at', date).single()),
+    queryFn: () => fromSupabase(
+        supabase
+            .from('Checklist')
+            .select('*')
+            .eq('created_at', date)
+    ),
 });
 
 export const useChecklists = () => useQuery({
