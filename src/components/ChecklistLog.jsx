@@ -16,11 +16,11 @@ const ChecklistLog = () => {
     },
   });
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <div>Carregando...</div>;
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Log de Conclusões</h1>
+      <h1 className="text-2xl font-bold mb-4">Log de Checklists Concluídos</h1>
       <div className="space-y-4">
         {logs?.map((log, index) => (
           <Card key={index}>
