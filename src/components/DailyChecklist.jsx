@@ -7,6 +7,8 @@ import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { db } from '../firebase/config';
+import { collection, doc, setDoc, getDoc } from 'firebase/firestore';
 
 const defaultTasks = [
   "Revisar e-mails importantes",
@@ -30,58 +32,62 @@ const DailyChecklist = () => {
   const [completedCard, setCompletedCard] = useState(null);
 
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
+  const dateKey = format(currentDate, 'yyyy-MM-dd');
 
   useEffect(() => {
-    const savedData = localStorage.getItem('dailyChecklist');
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      setTasks(parsedData.tasks || {});
-      setProductName(parsedData.productName || '');
-      setReadyTime(parsedData.readyTime || null);
-    }
-  }, [currentDate]);
+    const fetchData = async () => {
+      const docRef = doc(db, 'dailyChecklists', dateKey);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setTasks(data.tasks || {});
+        setProductName(data.productName || '');
+        setReadyTime(data.readyTime || null);
+      } else {
+        setTasks({});
+        setProductName('');
+        setReadyTime(null);
+      }
+    };
+    fetchData();
+  }, [dateKey]);
 
-  const saveData = (newTasks, newProductName, newReadyTime) => {
-    const dataToSave = {
+  const saveData = async (newTasks, newProductName, newReadyTime) => {
+    const docRef = doc(db, 'dailyChecklists', dateKey);
+    await setDoc(docRef, {
       tasks: newTasks,
       productName: newProductName,
       readyTime: newReadyTime
-    };
-    localStorage.setItem('dailyChecklist', JSON.stringify(dataToSave));
+    }, { merge: true });
   };
 
   const handlePreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
-  const toggleTask = (index) => {
-    const dateKey = format(currentDate, 'yyyy-MM-dd');
+  const toggleTask = async (index) => {
     const updatedTasks = {
       ...tasks,
-      [dateKey]: {
-        ...tasks[dateKey],
-        [index]: {
-          ...tasks[dateKey]?.[index],
-          checked: !tasks[dateKey]?.[index]?.checked,
-          time: tasks[dateKey]?.[index]?.checked ? null : new Date().toLocaleTimeString()
-        }
+      [index]: {
+        ...tasks[index],
+        checked: !tasks[index]?.checked,
+        time: tasks[index]?.checked ? null : new Date().toLocaleTimeString()
       }
     };
     setTasks(updatedTasks);
-    saveData(updatedTasks, productName, readyTime);
+    await saveData(updatedTasks, productName, readyTime);
   };
 
-  const handleProductNameChange = (e) => {
+  const handleProductNameChange = async (e) => {
     setProductName(e.target.value);
-    saveData(tasks, e.target.value, readyTime);
+    await saveData(tasks, e.target.value, readyTime);
   };
 
-  const handleReadyClick = () => {
+  const handleReadyClick = async () => {
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
-    saveData(tasks, productName, newReadyTime);
+    await saveData(tasks, productName, newReadyTime);
     
-    const dateKey = format(currentDate, 'yyyy-MM-dd');
-    const completedTasks = Object.entries(tasks[dateKey] || {})
+    const completedTasks = Object.entries(tasks)
       .filter(([_, task]) => task.checked)
       .map(([index, task]) => `${defaultTasks[index]}: ${task.time}`);
     
@@ -95,9 +101,7 @@ const DailyChecklist = () => {
     setCompletedCard(cardContent);
   };
 
-  const dateKey = format(currentDate, 'yyyy-MM-dd');
-  const currentTasks = tasks[dateKey] || {};
-
+  const currentTasks = tasks || {};
   const allTasksCompleted = Object.values(currentTasks).every(task => task?.checked);
 
   return (
