@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const WIP = () => {
   const [newIdea, setNewIdea] = useState({ title: '', description: '', importance: 'medium' });
+  const [newComment, setNewComment] = useState('');
   const queryClient = useQueryClient();
 
   const { data: ideas, isLoading } = useQuery({
@@ -36,6 +37,34 @@ const WIP = () => {
     },
   });
 
+  const updateIdeaStatus = useMutation({
+    mutationFn: async ({ id, status }) => {
+      const { data, error } = await supabase
+        .from('wip_ideas')
+        .update({ status })
+        .eq('id', id);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries('wipIdeas');
+    },
+  });
+
+  const addComment = useMutation({
+    mutationFn: async ({ ideaId, comment }) => {
+      const { data, error } = await supabase
+        .from('wip_comments')
+        .insert([{ idea_id: ideaId, comment }]);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries('wipIdeas');
+      setNewComment('');
+    },
+  });
+
   const handleInputChange = (e) => {
     setNewIdea({ ...newIdea, [e.target.name]: e.target.value });
   };
@@ -47,6 +76,16 @@ const WIP = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     addIdea.mutate(newIdea);
+  };
+
+  const handleStatusUpdate = (id, status) => {
+    updateIdeaStatus.mutate({ id, status });
+  };
+
+  const handleCommentSubmit = (ideaId) => {
+    if (newComment.trim()) {
+      addComment.mutate({ ideaId, comment: newComment });
+    }
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -93,6 +132,20 @@ const WIP = () => {
             <p className="text-gray-600 text-sm">Importância: {idea.importance}</p>
             <p className="mt-2">{idea.description}</p>
             <p className="text-gray-500 text-xs mt-2">{new Date(idea.created_at).toLocaleString()}</p>
+            <div className="mt-2 space-x-2">
+              <Button onClick={() => handleStatusUpdate(idea.id, 'green')} className="bg-green-500 hover:bg-green-600">Verde</Button>
+              <Button onClick={() => handleStatusUpdate(idea.id, 'yellow')} className="bg-yellow-500 hover:bg-yellow-600">Amarelo</Button>
+              <Button onClick={() => handleStatusUpdate(idea.id, 'red')} className="bg-red-500 hover:bg-red-600">Vermelho</Button>
+            </div>
+            <div className="mt-4">
+              <Textarea
+                placeholder="Adicione um comentário"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="mb-2"
+              />
+              <Button onClick={() => handleCommentSubmit(idea.id)}>Adicionar Comentário</Button>
+            </div>
           </div>
         ))}
       </div>
