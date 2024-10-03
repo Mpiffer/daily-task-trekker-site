@@ -99,7 +99,7 @@ const DailyChecklist = () => {
       completedTasks: completedTasks
     };
     
-    // Save log to localStorage (you might want to save this to Supabase as well in the future)
+    // Save log to localStorage
     const savedLogs = JSON.parse(localStorage.getItem('readyLogs') || '[]');
     savedLogs.push(log);
     localStorage.setItem('readyLogs', JSON.stringify(savedLogs));
