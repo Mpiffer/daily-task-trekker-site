@@ -105,7 +105,8 @@ const DailyChecklist = () => {
     return <div>Loading...</div>;
   }
 
-  const allTasksCompleted = Object.values(tasks).every(task => task?.checked);
+  const allTasksCompleted = Object.keys(tasks).length === defaultTasks.length && 
+                            Object.values(tasks).every(task => task.checked);
 
   return (
     <div className="max-w-md mx-auto p-4">
