@@ -77,6 +77,22 @@ const DailyChecklist = () => {
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
     saveData(tasks, productName, newReadyTime);
+    
+    // Generate log
+    const dateKey = format(currentDate, 'yyyy-MM-dd');
+    const completedTasks = Object.entries(tasks[dateKey] || {})
+      .filter(([_, task]) => task.checked)
+      .map(([index, task]) => `${defaultTasks[index]}: ${task.time}`);
+    
+    const log = `
+      Data: ${formattedDate}
+      Produto: ${productName}
+      Horário de conclusão: ${newReadyTime}
+      Tarefas concluídas:
+      ${completedTasks.join('\n')}
+    `;
+    
+    console.log(log); // You can replace this with a function to save the log to a database or file
   };
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');

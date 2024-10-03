@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { navItems } from "./nav-items";
 import TopMenu from "./components/TopMenu";
 import PatchNotes from "./components/PatchNotes";
+import Troubleshoot from "./components/Troubleshoot";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
             <Route key={to} path={to} element={page} />
           ))}
           <Route path="/patch-notes" element={<PatchNotes />} />
+          <Route path="/troubleshoot" element={<Troubleshoot />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
