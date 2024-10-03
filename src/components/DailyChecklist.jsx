@@ -5,10 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { db } from '../firebase/config';
-import { collection, doc, setDoc, getDoc } from 'firebase/firestore';
 
 const defaultTasks = [
   "Revisar e-mails importantes",
@@ -29,79 +26,78 @@ const DailyChecklist = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [productName, setProductName] = useState('');
   const [readyTime, setReadyTime] = useState(null);
-  const [completedCard, setCompletedCard] = useState(null);
 
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
-  const dateKey = format(currentDate, 'yyyy-MM-dd');
 
   useEffect(() => {
-    const fetchData = async () => {
-      const docRef = doc(db, 'dailyChecklists', dateKey);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setTasks(data.tasks || {});
-        setProductName(data.productName || '');
-        setReadyTime(data.readyTime || null);
-      } else {
-        setTasks({});
-        setProductName('');
-        setReadyTime(null);
-      }
-    };
-    fetchData();
-  }, [dateKey]);
+    const savedData = localStorage.getItem('dailyChecklist');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      setTasks(parsedData.tasks || {});
+      setProductName(parsedData.productName || '');
+      setReadyTime(parsedData.readyTime || null);
+    }
+  }, [currentDate]);
 
-  const saveData = async (newTasks, newProductName, newReadyTime) => {
-    const docRef = doc(db, 'dailyChecklists', dateKey);
-    await setDoc(docRef, {
+  const saveData = (newTasks, newProductName, newReadyTime) => {
+    const dataToSave = {
       tasks: newTasks,
       productName: newProductName,
       readyTime: newReadyTime
-    }, { merge: true });
+    };
+    localStorage.setItem('dailyChecklist', JSON.stringify(dataToSave));
   };
 
   const handlePreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
-  const toggleTask = async (index) => {
+  const toggleTask = (index) => {
+    const dateKey = format(currentDate, 'yyyy-MM-dd');
     const updatedTasks = {
       ...tasks,
-      [index]: {
-        ...tasks[index],
-        checked: !tasks[index]?.checked,
-        time: tasks[index]?.checked ? null : new Date().toLocaleTimeString()
+      [dateKey]: {
+        ...tasks[dateKey],
+        [index]: {
+          ...tasks[dateKey]?.[index],
+          checked: !tasks[dateKey]?.[index]?.checked,
+          time: tasks[dateKey]?.[index]?.checked ? null : new Date().toLocaleTimeString()
+        }
       }
     };
     setTasks(updatedTasks);
-    await saveData(updatedTasks, productName, readyTime);
+    saveData(updatedTasks, productName, readyTime);
   };
 
-  const handleProductNameChange = async (e) => {
+  const handleProductNameChange = (e) => {
     setProductName(e.target.value);
-    await saveData(tasks, e.target.value, readyTime);
+    saveData(tasks, e.target.value, readyTime);
   };
 
-  const handleReadyClick = async () => {
+  const handleReadyClick = () => {
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
-    await saveData(tasks, productName, newReadyTime);
+    saveData(tasks, productName, newReadyTime);
     
-    const completedTasks = Object.entries(tasks)
+    // Generate log
+    const dateKey = format(currentDate, 'yyyy-MM-dd');
+    const completedTasks = Object.entries(tasks[dateKey] || {})
       .filter(([_, task]) => task.checked)
       .map(([index, task]) => `${defaultTasks[index]}: ${task.time}`);
     
-    const cardContent = {
-      productName,
-      date: formattedDate,
-      readyTime: newReadyTime,
-      completedTasks
-    };
+    const log = `
+      Data: ${formattedDate}
+      Produto: ${productName}
+      Horário de conclusão: ${newReadyTime}
+      Tarefas concluídas:
+      ${completedTasks.join('\n')}
+    `;
     
-    setCompletedCard(cardContent);
+    console.log(log); // You can replace this with a function to save the log to a database or file
   };
 
-  const currentTasks = tasks || {};
+  const dateKey = format(currentDate, 'yyyy-MM-dd');
+  const currentTasks = tasks[dateKey] || {};
+
   const allTasksCompleted = Object.values(currentTasks).every(task => task?.checked);
 
   return (
@@ -153,19 +149,6 @@ const DailyChecklist = () => {
         <p className="mt-2 text-center text-green-600">
           Pronto às {readyTime}
         </p>
-      )}
-      
-      {completedCard && (
-        <Card className="mt-4 p-4">
-          <h3 className="text-lg font-bold">{completedCard.productName}</h3>
-          <p>Data: {completedCard.date}</p>
-          <p>Concluído às: {completedCard.readyTime}</p>
-          <ul className="mt-2">
-            {completedCard.completedTasks.map((task, index) => (
-              <li key={index}>{task}</li>
-            ))}
-          </ul>
-        </Card>
       )}
       
       <Button className="mt-4 w-full" onClick={() => setShowCalendar(!showCalendar)}>
