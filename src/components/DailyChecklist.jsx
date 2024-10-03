@@ -24,31 +24,28 @@ const defaultTasks = [
 const DailyChecklist = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
-  const [productName, setProductName] = useState('');
+  const [product, setProduct] = useState('');
   const [readyTime, setReadyTime] = useState(null);
   const [tasks, setTasks] = useState({});
 
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 
-  const { data: checklists, isLoading } = useChecklists();
+  const { data: checklist, isLoading } = useChecklist(dateKey);
   const addChecklist = useAddChecklist();
   const updateChecklist = useUpdateChecklist();
 
   useEffect(() => {
-    if (checklists) {
-      const todayChecklist = checklists.find(c => c.created_at.startsWith(dateKey));
-      if (todayChecklist) {
-        setProductName(todayChecklist.productName || '');
-        setReadyTime(todayChecklist.readyTime || null);
-        setTasks(todayChecklist.tasks || {});
-      } else {
-        setProductName('');
-        setReadyTime(null);
-        setTasks({});
-      }
+    if (checklist) {
+      setProduct(checklist.product || '');
+      setReadyTime(checklist.ready_time || null);
+      setTasks(checklist.tasks || {});
+    } else {
+      setProduct('');
+      setReadyTime(null);
+      setTasks({});
     }
-  }, [checklists, dateKey]);
+  }, [checklist]);
 
   const handlePreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
@@ -63,21 +60,19 @@ const DailyChecklist = () => {
     };
     setTasks(updatedTasks);
 
-    const todayChecklist = checklists?.find(c => c.created_at.startsWith(dateKey));
-    if (todayChecklist) {
-      await updateChecklist.mutateAsync({ id: todayChecklist.id, tasks: updatedTasks });
+    if (checklist) {
+      await updateChecklist.mutateAsync({ id: checklist.id, tasks: updatedTasks });
     } else {
-      await addChecklist.mutateAsync({ tasks: updatedTasks, productName, readyTime });
+      await addChecklist.mutateAsync({ tasks: updatedTasks, product, ready_time: readyTime, created_at: dateKey });
     }
   };
 
-  const handleProductNameChange = async (e) => {
-    setProductName(e.target.value);
-    const todayChecklist = checklists?.find(c => c.created_at.startsWith(dateKey));
-    if (todayChecklist) {
-      await updateChecklist.mutateAsync({ id: todayChecklist.id, productName: e.target.value });
+  const handleProductChange = async (e) => {
+    setProduct(e.target.value);
+    if (checklist) {
+      await updateChecklist.mutateAsync({ id: checklist.id, product: e.target.value });
     } else {
-      await addChecklist.mutateAsync({ productName: e.target.value, tasks, readyTime });
+      await addChecklist.mutateAsync({ product: e.target.value, tasks, ready_time: readyTime, created_at: dateKey });
     }
   };
 
@@ -85,11 +80,10 @@ const DailyChecklist = () => {
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
     
-    const todayChecklist = checklists?.find(c => c.created_at.startsWith(dateKey));
-    if (todayChecklist) {
-      await updateChecklist.mutateAsync({ id: todayChecklist.id, readyTime: newReadyTime });
+    if (checklist) {
+      await updateChecklist.mutateAsync({ id: checklist.id, ready_time: newReadyTime });
     } else {
-      await addChecklist.mutateAsync({ readyTime: newReadyTime, tasks, productName });
+      await addChecklist.mutateAsync({ ready_time: newReadyTime, tasks, product, created_at: dateKey });
     }
     
     // Generate log
@@ -99,7 +93,7 @@ const DailyChecklist = () => {
     
     const log = {
       date: formattedDate,
-      productName: productName,
+      product: product,
       readyTime: newReadyTime,
       completedTasks: completedTasks
     };
@@ -127,8 +121,8 @@ const DailyChecklist = () => {
       <Input
         type="text"
         placeholder="Nome do Produto"
-        value={productName}
-        onChange={handleProductNameChange}
+        value={product}
+        onChange={handleProductChange}
         className="mb-4"
       />
       

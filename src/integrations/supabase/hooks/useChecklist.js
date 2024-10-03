@@ -7,22 +7,9 @@ const fromSupabase = async (query) => {
     return data;
 };
 
-/*
-### Checklist
-
-| name       | type                     | format | required |
-|------------|--------------------------|--------|----------|
-| id         | int8                     | number | true     |
-| created_at | timestamp with time zone | string | true     |
-
-Note: 
-- 'id' is a Primary Key.
-- 'created_at' has a default value of now().
-*/
-
-export const useChecklist = (id) => useQuery({
-    queryKey: ['checklists', id],
-    queryFn: () => fromSupabase(supabase.from('Checklist').select('*').eq('id', id).single()),
+export const useChecklist = (date) => useQuery({
+    queryKey: ['checklists', date],
+    queryFn: () => fromSupabase(supabase.from('Checklist').select('*').eq('created_at', date).single()),
 });
 
 export const useChecklists = () => useQuery({
