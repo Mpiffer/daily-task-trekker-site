@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Calendar } from "@/components/ui/calendar"
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useChecklist, useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
+import { useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
 import ChecklistItem from './ChecklistItem';
 import useChecklist from '../hooks/useChecklist';
 
