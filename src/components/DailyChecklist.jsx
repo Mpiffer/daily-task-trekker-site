@@ -107,10 +107,6 @@ const DailyChecklist = () => {
     }
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
   const allTasksCompleted = Object.keys(tasks).length === defaultTasks.length && 
                             Object.values(tasks).every(task => task.checked);
 
