@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useChecklist, useChecklists, useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
 
 const defaultTasks = [
   "Revisar e-mails importantes",
@@ -22,65 +23,67 @@ const defaultTasks = [
 
 const DailyChecklist = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [tasks, setTasks] = useState({});
   const [showCalendar, setShowCalendar] = useState(false);
   const [productName, setProductName] = useState('');
   const [readyTime, setReadyTime] = useState(null);
 
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
+  const dateKey = format(currentDate, 'yyyy-MM-dd');
+
+  const { data: checklist, isLoading } = useChecklist(dateKey);
+  const addChecklist = useAddChecklist();
+  const updateChecklist = useUpdateChecklist();
 
   useEffect(() => {
-    const savedData = localStorage.getItem('dailyChecklist');
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      setTasks(parsedData.tasks || {});
-      setProductName(parsedData.productName || '');
-      setReadyTime(parsedData.readyTime || null);
+    if (checklist) {
+      setProductName(checklist.productName || '');
+      setReadyTime(checklist.readyTime || null);
+    } else {
+      setProductName('');
+      setReadyTime(null);
     }
-  }, [currentDate]);
-
-  const saveData = (newTasks, newProductName, newReadyTime) => {
-    const dataToSave = {
-      tasks: newTasks,
-      productName: newProductName,
-      readyTime: newReadyTime
-    };
-    localStorage.setItem('dailyChecklist', JSON.stringify(dataToSave));
-  };
+  }, [checklist]);
 
   const handlePreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
-  const toggleTask = (index) => {
-    const dateKey = format(currentDate, 'yyyy-MM-dd');
+  const toggleTask = async (index) => {
     const updatedTasks = {
-      ...tasks,
-      [dateKey]: {
-        ...tasks[dateKey],
-        [index]: {
-          ...tasks[dateKey]?.[index],
-          checked: !tasks[dateKey]?.[index]?.checked,
-          time: tasks[dateKey]?.[index]?.checked ? null : new Date().toLocaleTimeString()
-        }
+      ...checklist?.tasks,
+      [index]: {
+        checked: !checklist?.tasks?.[index]?.checked,
+        time: checklist?.tasks?.[index]?.checked ? null : new Date().toLocaleTimeString()
       }
     };
-    setTasks(updatedTasks);
-    saveData(updatedTasks, productName, readyTime);
+
+    if (checklist) {
+      await updateChecklist.mutateAsync({ id: checklist.id, tasks: updatedTasks });
+    } else {
+      await addChecklist.mutateAsync({ date: dateKey, tasks: updatedTasks });
+    }
   };
 
-  const handleProductNameChange = (e) => {
+  const handleProductNameChange = async (e) => {
     setProductName(e.target.value);
-    saveData(tasks, e.target.value, readyTime);
+    if (checklist) {
+      await updateChecklist.mutateAsync({ id: checklist.id, productName: e.target.value });
+    } else {
+      await addChecklist.mutateAsync({ date: dateKey, productName: e.target.value });
+    }
   };
 
-  const handleReadyClick = () => {
+  const handleReadyClick = async () => {
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
-    saveData(tasks, productName, newReadyTime);
+    
+    if (checklist) {
+      await updateChecklist.mutateAsync({ id: checklist.id, readyTime: newReadyTime });
+    } else {
+      await addChecklist.mutateAsync({ date: dateKey, readyTime: newReadyTime });
+    }
     
     // Generate log
-    const dateKey = format(currentDate, 'yyyy-MM-dd');
-    const completedTasks = Object.entries(tasks[dateKey] || {})
+    const completedTasks = Object.entries(checklist?.tasks || {})
       .filter(([_, task]) => task.checked)
       .map(([index, task]) => `${defaultTasks[index]}: ${task.time}`);
     
@@ -91,16 +94,17 @@ const DailyChecklist = () => {
       completedTasks: completedTasks
     };
     
-    // Save log to localStorage
+    // Save log to localStorage (you might want to save this to Supabase as well in the future)
     const savedLogs = JSON.parse(localStorage.getItem('readyLogs') || '[]');
     savedLogs.push(log);
     localStorage.setItem('readyLogs', JSON.stringify(savedLogs));
   };
 
-  const dateKey = format(currentDate, 'yyyy-MM-dd');
-  const currentTasks = tasks[dateKey] || {};
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-  const allTasksCompleted = Object.values(currentTasks).every(task => task?.checked);
+  const allTasksCompleted = Object.values(checklist?.tasks || {}).every(task => task?.checked);
 
   return (
     <div className="max-w-md mx-auto p-4">
@@ -123,17 +127,17 @@ const DailyChecklist = () => {
           <li key={index} className="flex items-center space-x-2">
             <Checkbox
               id={`task-${index}`}
-              checked={currentTasks[index]?.checked || false}
+              checked={checklist?.tasks?.[index]?.checked || false}
               onCheckedChange={() => toggleTask(index)}
             />
             <label
               htmlFor={`task-${index}`}
-              className={`flex-grow ${currentTasks[index]?.checked ? 'line-through text-gray-500' : ''}`}
+              className={`flex-grow ${checklist?.tasks?.[index]?.checked ? 'line-through text-gray-500' : ''}`}
             >
               {task}
             </label>
-            {currentTasks[index]?.time && (
-              <span className="text-sm text-gray-500">{currentTasks[index].time}</span>
+            {checklist?.tasks?.[index]?.time && (
+              <span className="text-sm text-gray-500">{checklist.tasks[index].time}</span>
             )}
           </li>
         ))}
