@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useChecklist as useSupabaseChecklist, useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
 
 const useChecklist = (dateKey) => {
@@ -64,7 +64,7 @@ const useChecklist = (dateKey) => {
     }
   }, [product, readyTime, tasks, dateKey, checklist, updateChecklist, addChecklist, refetch]);
 
-  return { 
+  return useMemo(() => ({ 
     tasks, 
     product, 
     readyTime, 
@@ -72,7 +72,7 @@ const useChecklist = (dateKey) => {
     toggleTask, 
     handleReadyClick,
     saveChecklist
-  };
+  }), [tasks, product, readyTime, setProduct, toggleTask, handleReadyClick, saveChecklist]);
 };
 
 export default useChecklist;

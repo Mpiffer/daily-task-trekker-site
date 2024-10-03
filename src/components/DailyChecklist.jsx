@@ -8,10 +8,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ChecklistItem from './ChecklistItem';
 import useChecklist from '../hooks/useChecklist';
 
-const DailyChecklist = () => {
+const DailyChecklist = React.memo(() => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
+  
   const dateKey = useMemo(() => format(currentDate, 'yyyy-MM-dd'), [currentDate]);
+  const formattedDate = useMemo(() => format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR }), [currentDate]);
 
   const { 
     tasks, 
@@ -23,8 +25,6 @@ const DailyChecklist = () => {
     saveChecklist
   } = useChecklist(dateKey);
 
-  const formattedDate = useMemo(() => format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR }), [currentDate]);
-
   const handlePreviousDay = useCallback(() => {
     setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() - 1)));
   }, []);
@@ -32,8 +32,6 @@ const DailyChecklist = () => {
   const handleNextDay = useCallback(() => {
     setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() + 1)));
   }, []);
-
-  const allTasksCompleted = useMemo(() => Object.values(tasks).every(task => task.checked), [tasks]);
 
   const handleCalendarToggle = useCallback(() => {
     setShowCalendar(prev => !prev);
@@ -52,6 +50,8 @@ const DailyChecklist = () => {
     handleReadyClick();
     saveChecklist();
   }, [handleReadyClick, saveChecklist]);
+
+  const allTasksCompleted = useMemo(() => Object.values(tasks).every(task => task.checked), [tasks]);
 
   return (
     <div className="max-w-md mx-auto p-4">
@@ -107,6 +107,6 @@ const DailyChecklist = () => {
       )}
     </div>
   );
-};
+});
 
-export default React.memo(DailyChecklist);
+export default DailyChecklist;
