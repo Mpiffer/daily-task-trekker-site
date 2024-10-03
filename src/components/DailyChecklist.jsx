@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { format, addDays, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useChecklist, useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
+import { useChecklist } from '@/integrations/supabase';
 
 const defaultTasks = [
   "Revisar e-mails importantes",
@@ -21,7 +21,7 @@ const defaultTasks = [
   "Atualizar o cronograma de trabalho"
 ];
 
-const DailyChecklist = () => {
+const DailyChecklist = ({ onUpdate }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
   const [product, setProduct] = useState('');
@@ -31,9 +31,7 @@ const DailyChecklist = () => {
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 
-  const { data: checklist, isLoading, refetch } = useChecklist(dateKey);
-  const addChecklist = useAddChecklist();
-  const updateChecklist = useUpdateChecklist();
+  const { data: checklist, isLoading } = useChecklist(dateKey);
 
   useEffect(() => {
     if (checklist && checklist.length > 0) {
@@ -48,8 +46,8 @@ const DailyChecklist = () => {
     }
   }, [checklist]);
 
-  const handlePreviousDay = () => setCurrentDate(subDays(currentDate, 1));
-  const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
+  const handlePreviousDay = () => setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() - 1)));
+  const handleNextDay = () => setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() + 1)));
 
   const toggleTask = (index) => {
     setTasks(prevTasks => ({
@@ -65,7 +63,7 @@ const DailyChecklist = () => {
     setProduct(e.target.value);
   };
 
-  const handleReadyClick = async () => {
+  const handleReadyClick = () => {
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
     
@@ -76,39 +74,15 @@ const DailyChecklist = () => {
       created_at: dateKey
     };
 
-    try {
-      if (checklist && checklist.length > 0) {
-        await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
-      } else {
-        await addChecklist.mutateAsync(checklistData);
-      }
-      
-      // Generate log
-      const completedTasks = Object.entries(tasks)
-        .filter(([_, task]) => task.checked)
-        .map(([index, task]) => `${defaultTasks[index]}: ${task.time}`);
-      
-      const log = {
-        date: formattedDate,
-        product: product,
-        readyTime: newReadyTime,
-        completedTasks: completedTasks
-      };
-      
-      // Save log to localStorage
-      const savedLogs = JSON.parse(localStorage.getItem('readyLogs') || '[]');
-      savedLogs.push(log);
-      localStorage.setItem('readyLogs', JSON.stringify(savedLogs));
-
-      // Refresh the checklist data
-      await refetch();
-    } catch (error) {
-      console.error("Error saving checklist:", error);
-    }
+    onUpdate(checklistData);
   };
 
   const allTasksCompleted = Object.keys(tasks).length === defaultTasks.length && 
                             Object.values(tasks).every(task => task.checked);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="max-w-md mx-auto p-4">
