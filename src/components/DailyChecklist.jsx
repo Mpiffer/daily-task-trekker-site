@@ -26,49 +26,58 @@ const DailyChecklist = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [productName, setProductName] = useState('');
   const [readyTime, setReadyTime] = useState(null);
+  const [tasks, setTasks] = useState({});
 
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 
-  const { data: checklist, isLoading } = useChecklist(dateKey);
+  const { data: checklists, isLoading } = useChecklists();
   const addChecklist = useAddChecklist();
   const updateChecklist = useUpdateChecklist();
 
   useEffect(() => {
-    if (checklist) {
-      setProductName(checklist.productName || '');
-      setReadyTime(checklist.readyTime || null);
-    } else {
-      setProductName('');
-      setReadyTime(null);
+    if (checklists) {
+      const todayChecklist = checklists.find(c => c.created_at.startsWith(dateKey));
+      if (todayChecklist) {
+        setProductName(todayChecklist.productName || '');
+        setReadyTime(todayChecklist.readyTime || null);
+        setTasks(todayChecklist.tasks || {});
+      } else {
+        setProductName('');
+        setReadyTime(null);
+        setTasks({});
+      }
     }
-  }, [checklist]);
+  }, [checklists, dateKey]);
 
   const handlePreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
   const toggleTask = async (index) => {
     const updatedTasks = {
-      ...checklist?.tasks,
+      ...tasks,
       [index]: {
-        checked: !checklist?.tasks?.[index]?.checked,
-        time: checklist?.tasks?.[index]?.checked ? null : new Date().toLocaleTimeString()
+        checked: !tasks[index]?.checked,
+        time: tasks[index]?.checked ? null : new Date().toLocaleTimeString()
       }
     };
+    setTasks(updatedTasks);
 
-    if (checklist) {
-      await updateChecklist.mutateAsync({ id: checklist.id, tasks: updatedTasks });
+    const todayChecklist = checklists?.find(c => c.created_at.startsWith(dateKey));
+    if (todayChecklist) {
+      await updateChecklist.mutateAsync({ id: todayChecklist.id, tasks: updatedTasks });
     } else {
-      await addChecklist.mutateAsync({ date: dateKey, tasks: updatedTasks });
+      await addChecklist.mutateAsync({ tasks: updatedTasks, productName, readyTime });
     }
   };
 
   const handleProductNameChange = async (e) => {
     setProductName(e.target.value);
-    if (checklist) {
-      await updateChecklist.mutateAsync({ id: checklist.id, productName: e.target.value });
+    const todayChecklist = checklists?.find(c => c.created_at.startsWith(dateKey));
+    if (todayChecklist) {
+      await updateChecklist.mutateAsync({ id: todayChecklist.id, productName: e.target.value });
     } else {
-      await addChecklist.mutateAsync({ date: dateKey, productName: e.target.value });
+      await addChecklist.mutateAsync({ productName: e.target.value, tasks, readyTime });
     }
   };
 
@@ -76,14 +85,15 @@ const DailyChecklist = () => {
     const newReadyTime = new Date().toLocaleTimeString();
     setReadyTime(newReadyTime);
     
-    if (checklist) {
-      await updateChecklist.mutateAsync({ id: checklist.id, readyTime: newReadyTime });
+    const todayChecklist = checklists?.find(c => c.created_at.startsWith(dateKey));
+    if (todayChecklist) {
+      await updateChecklist.mutateAsync({ id: todayChecklist.id, readyTime: newReadyTime });
     } else {
-      await addChecklist.mutateAsync({ date: dateKey, readyTime: newReadyTime });
+      await addChecklist.mutateAsync({ readyTime: newReadyTime, tasks, productName });
     }
     
     // Generate log
-    const completedTasks = Object.entries(checklist?.tasks || {})
+    const completedTasks = Object.entries(tasks)
       .filter(([_, task]) => task.checked)
       .map(([index, task]) => `${defaultTasks[index]}: ${task.time}`);
     
@@ -104,7 +114,7 @@ const DailyChecklist = () => {
     return <div>Loading...</div>;
   }
 
-  const allTasksCompleted = Object.values(checklist?.tasks || {}).every(task => task?.checked);
+  const allTasksCompleted = Object.values(tasks).every(task => task?.checked);
 
   return (
     <div className="max-w-md mx-auto p-4">
@@ -127,17 +137,17 @@ const DailyChecklist = () => {
           <li key={index} className="flex items-center space-x-2">
             <Checkbox
               id={`task-${index}`}
-              checked={checklist?.tasks?.[index]?.checked || false}
+              checked={tasks[index]?.checked || false}
               onCheckedChange={() => toggleTask(index)}
             />
             <label
               htmlFor={`task-${index}`}
-              className={`flex-grow ${checklist?.tasks?.[index]?.checked ? 'line-through text-gray-500' : ''}`}
+              className={`flex-grow ${tasks[index]?.checked ? 'line-through text-gray-500' : ''}`}
             >
               {task}
             </label>
-            {checklist?.tasks?.[index]?.time && (
-              <span className="text-sm text-gray-500">{checklist.tasks[index].time}</span>
+            {tasks[index]?.time && (
+              <span className="text-sm text-gray-500">{tasks[index].time}</span>
             )}
           </li>
         ))}

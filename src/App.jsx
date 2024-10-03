@@ -11,8 +11,8 @@ import Troubleshoot from "./components/Troubleshoot";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
+  <QueryClientProvider client={queryClient}>
+    <React.StrictMode>
       <TooltipProvider>
         <Toaster />
         <BrowserRouter>
@@ -26,8 +26,8 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </QueryClientProvider>
-  </React.StrictMode>
+    </React.StrictMode>
+  </QueryClientProvider>
 );
 
 export default App;

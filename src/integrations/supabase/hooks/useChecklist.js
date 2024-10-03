@@ -14,25 +14,15 @@ const fromSupabase = async (query) => {
 |------------|--------------------------|--------|----------|
 | id         | int8                     | number | true     |
 | created_at | timestamp with time zone | string | true     |
-| date       | date                     | string | true     |
-| tasks      | jsonb                    | object | false    |
-| productName| text                     | string | false    |
-| readyTime  | time                     | string | false    |
 
 Note: 
 - 'id' is a Primary Key.
 - 'created_at' has a default value of now().
-- 'date' is added to store the specific date for each checklist.
-- 'tasks' is added to store the tasks and their states.
-- 'productName' is added to store the product name.
-- 'readyTime' is added to store the time when the checklist was marked as ready.
-
-No foreign key relationships are present for this table.
 */
 
-export const useChecklist = (date) => useQuery({
-    queryKey: ['checklists', date],
-    queryFn: () => fromSupabase(supabase.from('Checklist').select('*').eq('date', date).single()),
+export const useChecklist = (id) => useQuery({
+    queryKey: ['checklists', id],
+    queryFn: () => fromSupabase(supabase.from('Checklist').select('*').eq('id', id).single()),
 });
 
 export const useChecklists = () => useQuery({
