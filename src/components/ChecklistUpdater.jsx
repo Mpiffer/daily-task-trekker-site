@@ -8,7 +8,7 @@ const ChecklistUpdater = ({ dateKey, checklistData }) => {
 
   useEffect(() => {
     const updateSupabase = async () => {
-      if (!checklistData.ready_time) return;
+      if (!checklistData) return;
 
       try {
         if (checklist && checklist.length > 0) {
