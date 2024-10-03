@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Calendar } from "@/components/ui/calendar"
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
 import ChecklistItem from './ChecklistItem';
 import useChecklist from '../hooks/useChecklist';
 
 const DailyChecklist = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
-  const dateKey = format(currentDate, 'yyyy-MM-dd');
+  const dateKey = useMemo(() => format(currentDate, 'yyyy-MM-dd'), [currentDate]);
 
   const { 
     tasks, 
@@ -24,12 +23,35 @@ const DailyChecklist = () => {
     saveChecklist
   } = useChecklist(dateKey);
 
-  const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
+  const formattedDate = useMemo(() => format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR }), [currentDate]);
 
-  const handlePreviousDay = () => setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() - 1)));
-  const handleNextDay = () => setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() + 1)));
+  const handlePreviousDay = useCallback(() => {
+    setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() - 1)));
+  }, []);
 
-  const allTasksCompleted = Object.values(tasks).every(task => task.checked);
+  const handleNextDay = useCallback(() => {
+    setCurrentDate(prevDate => new Date(prevDate.setDate(prevDate.getDate() + 1)));
+  }, []);
+
+  const allTasksCompleted = useMemo(() => Object.values(tasks).every(task => task.checked), [tasks]);
+
+  const handleCalendarToggle = useCallback(() => {
+    setShowCalendar(prev => !prev);
+  }, []);
+
+  const handleCalendarSelect = useCallback((date) => {
+    setCurrentDate(date || new Date());
+    setShowCalendar(false);
+  }, []);
+
+  const handleProductChange = useCallback((e) => {
+    setProduct(e.target.value);
+  }, [setProduct]);
+
+  const handleReadyButtonClick = useCallback(() => {
+    handleReadyClick();
+    saveChecklist();
+  }, [handleReadyClick, saveChecklist]);
 
   return (
     <div className="max-w-md mx-auto p-4">
@@ -43,7 +65,7 @@ const DailyChecklist = () => {
         type="text"
         placeholder="Nome do Produto"
         value={product}
-        onChange={(e) => setProduct(e.target.value)}
+        onChange={handleProductChange}
         className="mb-4"
       />
       
@@ -59,10 +81,7 @@ const DailyChecklist = () => {
       
       <Button 
         className="mt-4 w-full" 
-        onClick={() => {
-          handleReadyClick();
-          saveChecklist();
-        }}
+        onClick={handleReadyButtonClick}
         disabled={!allTasksCompleted || readyTime !== null}
       >
         Ready
@@ -74,7 +93,7 @@ const DailyChecklist = () => {
         </p>
       )}
       
-      <Button className="mt-4 w-full" onClick={() => setShowCalendar(!showCalendar)}>
+      <Button className="mt-4 w-full" onClick={handleCalendarToggle}>
         {showCalendar ? 'Fechar Calendário' : 'Abrir Calendário'}
       </Button>
       
@@ -82,10 +101,7 @@ const DailyChecklist = () => {
         <Calendar
           mode="single"
           selected={currentDate}
-          onSelect={(date) => {
-            setCurrentDate(date || new Date());
-            setShowCalendar(false);
-          }}
+          onSelect={handleCalendarSelect}
           className="mt-4"
         />
       )}
@@ -93,4 +109,4 @@ const DailyChecklist = () => {
   );
 };
 
-export default DailyChecklist;
+export default React.memo(DailyChecklist);

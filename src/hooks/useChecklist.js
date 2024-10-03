@@ -1,18 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useChecklist as useSupabaseChecklist, useAddChecklist, useUpdateChecklist } from '@/integrations/supabase';
-
-const defaultTasks = [
-  "Revisar e-mails importantes",
-  "Realizar chamadas de clientes",
-  "Planejar tarefas do dia seguinte",
-  "Verificar metas diárias",
-  "Organizar documentos",
-  "Revisar relatórios financeiros",
-  "Analisar feedback de clientes",
-  "Preparar apresentações",
-  "Participar de reuniões programadas",
-  "Atualizar o cronograma de trabalho"
-];
 
 const useChecklist = (dateKey) => {
   const [tasks, setTasks] = useState({});
@@ -32,14 +19,17 @@ const useChecklist = (dateKey) => {
     } else {
       setProduct('');
       setReadyTime(null);
-      setTasks(Object.fromEntries(defaultTasks.map((text, index) => [
-        `task-${index}`,
-        { id: `task-${index}`, text, checked: false, time: null }
-      ])));
+      setTasks({
+        'task-1': { id: 'task-1', text: 'Revisar e-mails importantes', checked: false, time: null },
+        'task-2': { id: 'task-2', text: 'Realizar chamadas de clientes', checked: false, time: null },
+        'task-3': { id: 'task-3', text: 'Planejar tarefas do dia seguinte', checked: false, time: null },
+        'task-4': { id: 'task-4', text: 'Verificar metas diárias', checked: false, time: null },
+        'task-5': { id: 'task-5', text: 'Organizar documentos', checked: false, time: null },
+      });
     }
   }, [checklist]);
 
-  const toggleTask = (taskId) => {
+  const toggleTask = useCallback((taskId) => {
     setTasks(prevTasks => ({
       ...prevTasks,
       [taskId]: {
@@ -48,14 +38,13 @@ const useChecklist = (dateKey) => {
         time: !prevTasks[taskId].checked ? new Date().toLocaleTimeString() : null
       }
     }));
-  };
+  }, []);
 
-  const handleReadyClick = () => {
-    const newReadyTime = new Date().toLocaleTimeString();
-    setReadyTime(newReadyTime);
-  };
+  const handleReadyClick = useCallback(() => {
+    setReadyTime(new Date().toLocaleTimeString());
+  }, []);
 
-  const saveChecklist = async () => {
+  const saveChecklist = useCallback(async () => {
     const checklistData = {
       product,
       ready_time: readyTime,
@@ -73,7 +62,7 @@ const useChecklist = (dateKey) => {
     } catch (error) {
       console.error("Error saving checklist:", error);
     }
-  };
+  }, [product, readyTime, tasks, dateKey, checklist, updateChecklist, addChecklist, refetch]);
 
   return { 
     tasks, 
