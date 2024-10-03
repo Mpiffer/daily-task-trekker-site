@@ -28,6 +28,7 @@ const DailyChecklist = ({ onUpdate }) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [product, setProduct] = useState('');
   const [readyTime, setReadyTime] = useState(null);
+  const [finishTime, setFinishTime] = useState(null);
   const [tasks, setTasks] = useState({});
   const { theme, setTheme } = useTheme();
 
@@ -41,10 +42,12 @@ const DailyChecklist = ({ onUpdate }) => {
       const currentChecklist = checklist[0];
       setProduct(currentChecklist.product || '');
       setReadyTime(currentChecklist.ready_time || null);
+      setFinishTime(currentChecklist.finish_time || null);
       setTasks(currentChecklist.tasks || {});
     } else {
       setProduct('');
       setReadyTime(null);
+      setFinishTime(null);
       setTasks({});
     }
   }, [checklist]);
@@ -73,6 +76,21 @@ const DailyChecklist = ({ onUpdate }) => {
     const checklistData = {
       product: product,
       ready_time: newReadyTime,
+      tasks: tasks,
+      created_at: dateKey
+    };
+
+    onUpdate(checklistData);
+  };
+
+  const handleFinishClick = () => {
+    const newFinishTime = new Date().toLocaleTimeString();
+    setFinishTime(newFinishTime);
+    
+    const checklistData = {
+      product: product,
+      ready_time: readyTime,
+      finish_time: newFinishTime,
       tasks: tasks,
       created_at: dateKey
     };
@@ -146,6 +164,20 @@ const DailyChecklist = ({ onUpdate }) => {
       {readyTime && (
         <p className="mt-2 text-center text-green-600 dark:text-green-400">
           Pronto às {readyTime}
+        </p>
+      )}
+      
+      <Button 
+        className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white" 
+        onClick={handleFinishClick}
+        disabled={!readyTime || finishTime !== null}
+      >
+        Finalizar
+      </Button>
+      
+      {finishTime && (
+        <p className="mt-2 text-center text-blue-600 dark:text-blue-400">
+          Finalizado às {finishTime}
         </p>
       )}
       

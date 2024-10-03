@@ -9,7 +9,7 @@ const ChecklistLog = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('Checklist')
-        .select('product, ready_time, created_at')
+        .select('product, ready_time, finish_time, created_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
@@ -29,7 +29,8 @@ const ChecklistLog = () => {
             </CardHeader>
             <CardContent>
               <p><strong>Produto:</strong> {log.product}</p>
-              <p><strong>Horário de conclusão:</strong> {log.ready_time}</p>
+              <p><strong>Horário de início:</strong> {log.ready_time}</p>
+              <p><strong>Horário de finalização:</strong> {log.finish_time || 'Não finalizado'}</p>
             </CardContent>
           </Card>
         ))}
