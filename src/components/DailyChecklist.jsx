@@ -83,20 +83,22 @@ const DailyChecklist = ({ onUpdate }) => {
     onUpdate(checklistData);
   };
 
-  const handleFinishClick = () => {
-    const newFinishTime = new Date().toLocaleTimeString();
-    setFinishTime(newFinishTime);
-    
-    const checklistData = {
-      product: product,
-      ready_time: readyTime,
-      finish_time: newFinishTime,
-      tasks: tasks,
-      created_at: dateKey
-    };
 
-    onUpdate(checklistData);
+const handleFinishClick = () => {
+  const newFinishTime = new Date().toLocaleTimeString();
+  setFinishTime(newFinishTime);
+  
+  const checklistData = {
+    product: product,
+    ready_time: readyTime,
+    finish_time: newFinishTime,
+    tasks: tasks,
+    created_at: dateKey
   };
+
+  onUpdate(checklistData);
+};
+
 
   const allTasksCompleted = Object.keys(tasks).length === defaultTasks.length && 
                             Object.values(tasks).every(task => task.checked);
