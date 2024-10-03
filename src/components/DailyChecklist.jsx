@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,7 @@ import { useTheme } from 'next-themes';
 import ChecklistItem from './ChecklistItem';
 import DateNavigation from './DateNavigation';
 import ReadyFinishButtons from './ReadyFinishButtons';
+import SearchBar from './SearchBar';
 
 const defaultTasks = [
   "Revisar e-mails importantes",
@@ -30,6 +31,7 @@ const DailyChecklist = () => {
   const [finishTime, setFinishTime] = useState(null);
   const [tasks, setTasks] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const { theme, setTheme } = useTheme();
 
   const formattedDate = format(currentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
@@ -127,7 +129,13 @@ const DailyChecklist = () => {
     }
   };
 
-  const allTasksCompleted = Object.keys(tasks).length === defaultTasks.length && 
+  const filteredTasks = useMemo(() => {
+    return defaultTasks.filter(task =>
+      task.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm]);
+
+  const allTasksCompleted = Object.keys(tasks).length === filteredTasks.length && 
                             Object.values(tasks).every(task => task.checked);
 
   if (isLoading) {
@@ -150,8 +158,13 @@ const DailyChecklist = () => {
         className="mb-4"
       />
       
+      <SearchBar
+        placeholder="Buscar tarefas..."
+        onSearch={setSearchTerm}
+      />
+      
       <ul className="space-y-2">
-        {defaultTasks.map((task, index) => (
+        {filteredTasks.map((task, index) => (
           <ChecklistItem
             key={index}
             task={task}
@@ -186,13 +199,6 @@ const DailyChecklist = () => {
           className="mt-4"
         />
       )}
-
-      <Button
-        className="mt-4 w-full"
-        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      >
-        {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-      </Button>
     </div>
   );
 };

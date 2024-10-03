@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/supabase';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import SearchBar from './SearchBar';
 
 const Troubleshoot = () => {
   const [newIssue, setNewIssue] = useState({ error: '', solution: '', duration: '' });
+  const [searchTerm, setSearchTerm] = useState('');
   const queryClient = useQueryClient();
 
   const { data: issues, isLoading } = useQuery({
@@ -44,6 +46,14 @@ const Troubleshoot = () => {
     addIssue.mutate(newIssue);
   };
 
+  const filteredIssues = useMemo(() => {
+    if (!issues) return [];
+    return issues.filter(issue =>
+      issue.error.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      issue.solution.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [issues, searchTerm]);
+
   if (isLoading) return <div>Loading...</div>;
 
   return (
@@ -79,8 +89,13 @@ const Troubleshoot = () => {
         </Button>
       </form>
 
+      <SearchBar
+        placeholder="Buscar por erro ou solução..."
+        onSearch={setSearchTerm}
+      />
+
       <div className="space-y-4">
-        {issues?.map((issue) => (
+        {filteredIssues.map((issue) => (
           <div key={issue.id} className="bg-gray-100 p-4 rounded-lg">
             <h2 className="text-xl font-semibold">{issue.error}</h2>
             <p className="text-gray-600 text-sm">{new Date(issue.created_at).toLocaleString()}</p>

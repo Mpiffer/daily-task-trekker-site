@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/supabase';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import SearchBar from './SearchBar';
 
 const PatchNotes = () => {
   const [newNote, setNewNote] = useState({ title: '', description: '' });
+  const [searchTerm, setSearchTerm] = useState('');
   const queryClient = useQueryClient();
 
   const { data: patchNotes, isLoading } = useQuery({
@@ -44,6 +46,14 @@ const PatchNotes = () => {
     addPatchNote.mutate(newNote);
   };
 
+  const filteredPatchNotes = useMemo(() => {
+    if (!patchNotes) return [];
+    return patchNotes.filter(note =>
+      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [patchNotes, searchTerm]);
+
   if (isLoading) return <div>Loading...</div>;
 
   return (
@@ -71,8 +81,13 @@ const PatchNotes = () => {
         </Button>
       </form>
 
+      <SearchBar
+        placeholder="Buscar por título ou descrição..."
+        onSearch={setSearchTerm}
+      />
+
       <div className="space-y-4">
-        {patchNotes?.map((note) => (
+        {filteredPatchNotes.map((note) => (
           <div key={note.id} className="bg-gray-100 p-4 rounded-lg">
             <h2 className="text-xl font-semibold">{note.title}</h2>
             <p className="text-gray-600 text-sm">{new Date(note.created_at).toLocaleString()}</p>

@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import SearchBar from './SearchBar';
 
 const ChecklistLog = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+
   const { data: logs, isLoading } = useQuery({
     queryKey: ['checklistLogs'],
     queryFn: async () => {
@@ -16,13 +19,25 @@ const ChecklistLog = () => {
     },
   });
 
+  const filteredLogs = useMemo(() => {
+    if (!logs) return [];
+    return logs.filter(log =>
+      log.product.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      new Date(log.created_at).toLocaleDateString().includes(searchTerm)
+    );
+  }, [logs, searchTerm]);
+
   if (isLoading) return <div>Carregando...</div>;
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Log de Checklists Concluídos</h1>
+      <SearchBar
+        placeholder="Buscar por produto ou data..."
+        onSearch={setSearchTerm}
+      />
       <div className="space-y-4">
-        {logs?.map((log, index) => (
+        {filteredLogs.map((log, index) => (
           <Card key={index}>
             <CardHeader>
               <CardTitle>{new Date(log.created_at).toLocaleDateString()}</CardTitle>
