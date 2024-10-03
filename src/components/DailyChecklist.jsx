@@ -52,14 +52,13 @@ const DailyChecklist = () => {
   const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
   const toggleTask = (index) => {
-    const updatedTasks = {
-      ...tasks,
+    setTasks(prevTasks => ({
+      ...prevTasks,
       [index]: {
-        checked: !tasks[index]?.checked,
-        time: tasks[index]?.checked ? null : new Date().toLocaleTimeString()
+        checked: !prevTasks[index]?.checked,
+        time: !prevTasks[index]?.checked ? new Date().toLocaleTimeString() : null
       }
-    };
-    setTasks(updatedTasks);
+    }));
   };
 
   const handleProductChange = (e) => {
@@ -77,28 +76,35 @@ const DailyChecklist = () => {
       created_at: dateKey
     };
 
-    if (checklist && checklist.length > 0) {
-      await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
-    } else {
-      await addChecklist.mutateAsync(checklistData);
+    try {
+      if (checklist && checklist.length > 0) {
+        await updateChecklist.mutateAsync({ id: checklist[0].id, ...checklistData });
+      } else {
+        await addChecklist.mutateAsync(checklistData);
+      }
+      
+      // Generate log
+      const completedTasks = Object.entries(tasks)
+        .filter(([_, task]) => task.checked)
+        .map(([index, task]) => `${defaultTasks[index]}: ${task.time}`);
+      
+      const log = {
+        date: formattedDate,
+        product: product,
+        readyTime: newReadyTime,
+        completedTasks: completedTasks
+      };
+      
+      // Save log to localStorage
+      const savedLogs = JSON.parse(localStorage.getItem('readyLogs') || '[]');
+      savedLogs.push(log);
+      localStorage.setItem('readyLogs', JSON.stringify(savedLogs));
+
+      // Refresh the checklist data
+      await checklist.refetch();
+    } catch (error) {
+      console.error("Error saving checklist:", error);
     }
-    
-    // Generate log
-    const completedTasks = Object.entries(tasks)
-      .filter(([_, task]) => task.checked)
-      .map(([index, task]) => `${defaultTasks[index]}: ${task.time}`);
-    
-    const log = {
-      date: formattedDate,
-      product: product,
-      readyTime: newReadyTime,
-      completedTasks: completedTasks
-    };
-    
-    // Save log to localStorage
-    const savedLogs = JSON.parse(localStorage.getItem('readyLogs') || '[]');
-    savedLogs.push(log);
-    localStorage.setItem('readyLogs', JSON.stringify(savedLogs));
   };
 
   if (isLoading) {
@@ -148,7 +154,7 @@ const DailyChecklist = () => {
       <Button 
         className="mt-4 w-full" 
         onClick={handleReadyClick}
-        disabled={!allTasksCompleted}
+        disabled={!allTasksCompleted || readyTime !== null}
       >
         Ready
       </Button>
