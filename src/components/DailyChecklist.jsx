@@ -11,16 +11,16 @@ import ReadyFinishButtons from './ReadyFinishButtons';
 import SearchBar from './SearchBar';
 
 const defaultTasks = [
-  "Revisar e-mails importantes",
-  "Realizar chamadas de clientes",
-  "Planejar tarefas do dia seguinte",
-  "Verificar metas diárias",
-  "Organizar documentos",
-  "Revisar relatórios financeiros",
-  "Analisar feedback de clientes",
-  "Preparar apresentações",
-  "Participar de reuniões programadas",
-  "Atualizar o cronograma de trabalho"
+  "Verificar os sinais do Restream",
+  "Conferir e mudar ordem das cameras no pc principal e no bkp",
+  "Verificar se os jogos do dia estão corretos no flowics",
+  "Ajustar a macro da intro pra cena de Lobby correta",
+  "Ajustar as cenas Ingame e Pregame pra quantidade de Lendas do dia",
+  "Setar e preparar o bkp de redundancia, verificar o restream",
+  "Abrir transmissão no Disc para as Lendas",
+  "Abrir o feed que vai ser usado no Segundo Monitor do pc prinpal e bkp",
+  "Abrir a twitch para acompanhar o chat em tempo real e validar como ta a live",
+  "Validar se todos os detalhes foram checados"
 ];
 
 const DailyChecklist = () => {
